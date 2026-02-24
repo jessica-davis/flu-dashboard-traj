@@ -97,8 +97,8 @@ function createTrendArrow() {
     g.append("path")
         .attr("class", "trend-arrow-path")
         .attr("d", "M-32,-10 L18,-10 L18,-22 L48,0 L18,22 L18,10 L-32,10 Z")
-        .attr("fill", "#E0E0E0")
-        .attr("stroke", "#bbb")
+        .attr("fill", "#D1E5B7")
+        .attr("stroke", "#ccc")
         .attr("stroke-width", 1);
 }
 
@@ -145,8 +145,8 @@ function updateTrendArrow() {
     d3.select("#trend-arrow-svg").select(".trend-arrow-path")
         .transition()
         .duration(500)
-        .attr("fill", TREND_COLORS[mostLikely] || "#E0E0E0")
-        .attr("stroke", isStable ? "#bbb" : "none");
+        .attr("fill", TREND_COLORS[mostLikely] || "#D1E5B7")
+        .attr("stroke", isStable ? "#ccc" : "none");
 
     // Update label below arrow
     const label = TREND_LABELS[mostLikely] || "";

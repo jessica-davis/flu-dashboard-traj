@@ -1,12 +1,12 @@
 // Color schemes and category constants for the flu dashboard
 
-// Trend colors (diverging blue–gray–orange, colorblind-safe)
+// Trend colors
 const TREND_COLORS = {
-    large_decrease: "#2166AC",
-    decrease: "#67A9CF",
-    stable: "#E0E0E0",
-    increase: "#FDAE61",
-    large_increase: "#D95F02"
+    large_decrease: "#75BFBD",
+    decrease: "#9CD3B4",
+    stable: "#D1E5B7",
+    increase: "#EFDA86",
+    large_increase: "#E8A56D"
 };
 
 const TREND_ORDER = ["large_decrease", "decrease", "stable", "increase", "large_increase"];
@@ -19,12 +19,12 @@ const TREND_LABELS = {
     large_increase: "Large Increase"
 };
 
-// Activity colors (teal sequential scale)
+// Activity colors
 const ACTIVITY_COLORS = {
-    low: "#D5EEEA",
-    moderate: "#99D3C7",
-    high: "#4DA89E",
-    very_high: "#1A6E5F"
+    low: "#E4F7EE",
+    moderate: "#9CD8D3",
+    high: "#4B9AC1",
+    very_high: "#4D6891"
 };
 
 const ACTIVITY_ORDER = ["low", "moderate", "high", "very_high"];
