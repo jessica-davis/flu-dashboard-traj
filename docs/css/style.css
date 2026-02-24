@@ -25,6 +25,12 @@ header {
     border-bottom: 1px solid #ddd;
 }
 
+.header-row {
+    display: flex;
+    justify-content: space-between;
+    align-items: flex-start;
+}
+
 h1 {
     font-size: 26px;
     font-weight: 700;
@@ -39,6 +45,26 @@ h1 {
     color: #888;
     margin-top: 3px;
     font-weight: 400;
+}
+
+.tour-btn {
+    font-family: "Helvetica Neue", Arial, sans-serif;
+    font-size: 13px;
+    font-weight: 600;
+    padding: 7px 16px;
+    border: 1.5px solid #1a1a1a;
+    border-radius: 5px;
+    background: #fff;
+    color: #1a1a1a;
+    cursor: pointer;
+    transition: all 0.15s ease;
+    white-space: nowrap;
+    margin-top: 4px;
+}
+
+.tour-btn:hover {
+    background: #1a1a1a;
+    color: #fff;
 }
 
 /* --- Date Buttons --- */
@@ -480,4 +506,133 @@ h1 {
 
 .traj-tip.visible {
     opacity: 1;
+}
+
+/* =============================================
+   Guided Tour
+   ============================================= */
+
+.tour-overlay {
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100vw;
+    height: 100vh;
+    background: rgba(0, 0, 0, 0.45);
+    z-index: 10000;
+    transition: clip-path 0.3s ease;
+}
+
+.tour-spotlight {
+    position: relative;
+    z-index: 10001;
+}
+
+.tour-popup {
+    position: fixed;
+    z-index: 10002;
+    background: #fff;
+    border-radius: 10px;
+    padding: 22px 24px 16px;
+    box-shadow: 0 6px 24px rgba(0, 0, 0, 0.18);
+    max-width: 340px;
+    width: 340px;
+    font-family: "Helvetica Neue", Arial, sans-serif;
+    animation: tourFadeIn 0.25s ease;
+}
+
+@keyframes tourFadeIn {
+    from { opacity: 0; transform: translateY(6px); }
+    to { opacity: 1; transform: translateY(0); }
+}
+
+.tour-close {
+    position: absolute;
+    top: 10px;
+    right: 12px;
+    background: none;
+    border: none;
+    font-size: 20px;
+    color: #aaa;
+    cursor: pointer;
+    line-height: 1;
+    padding: 2px 6px;
+    border-radius: 4px;
+    transition: color 0.1s ease, background 0.1s ease;
+}
+
+.tour-close:hover {
+    color: #333;
+    background: #f0f0f0;
+}
+
+.tour-step-title {
+    font-size: 16px;
+    font-weight: 700;
+    color: #1a1a1a;
+    margin-bottom: 8px;
+    padding-right: 24px;
+}
+
+.tour-step-text {
+    font-size: 13px;
+    color: #555;
+    line-height: 1.55;
+    margin-bottom: 16px;
+}
+
+.tour-nav {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    border-top: 1px solid #eee;
+    padding-top: 12px;
+}
+
+.tour-counter {
+    font-size: 12px;
+    color: #999;
+    font-weight: 500;
+}
+
+.tour-arrows {
+    display: flex;
+    gap: 6px;
+}
+
+.tour-arrow {
+    width: 34px;
+    height: 34px;
+    border-radius: 50%;
+    border: 1.5px solid #ddd;
+    background: #fff;
+    font-size: 16px;
+    color: #333;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    transition: all 0.12s ease;
+    padding: 0;
+    line-height: 1;
+}
+
+.tour-arrow:hover:not(:disabled) {
+    background: #1a1a1a;
+    color: #fff;
+    border-color: #1a1a1a;
+}
+
+.tour-arrow:disabled {
+    opacity: 0.3;
+    cursor: default;
+}
+
+.tour-next {
+    font-size: 13px;
+    width: auto;
+    min-width: 34px;
+    padding: 0 12px;
+    border-radius: 17px;
+    font-weight: 600;
 }
