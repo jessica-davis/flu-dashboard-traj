@@ -31,10 +31,10 @@ function initTrajectoryChart() {
     // Layers for proper z-ordering
     trajChartG.append("g").attr("class", "layer-seasons");
     trajChartG.append("g").attr("class", "layer-trajectories");
-    trajChartG.append("g").attr("class", "layer-observed");
     trajChartG.append("g").attr("class", "layer-axes");
     trajChartG.append("g").attr("class", "layer-donut");
     trajChartG.append("g").attr("class", "layer-interaction");
+    trajChartG.append("g").attr("class", "layer-observed");
 
     // Populate location dropdown
     const locSelect = d3.select("#traj-location");
@@ -101,7 +101,7 @@ function drawTrajectories() {
     const observed = targetDataAll?.[fips] || [];
     const observedParsed = observed
         .filter(d => d.value != null)
-        .map(d => ({ date: new Date(d.date + "T00:00:00"), value: d.value }));
+        .map(d => ({ date: new Date(d.date + "T00:00:00"), value: d.value, rate: d.rate }));
 
     // Fixed start date: November 1 of current season
     const showFrom = new Date("2025-11-01T00:00:00");
@@ -282,23 +282,55 @@ function drawTrajectories() {
             .attr("stroke", "#1a1a1a")
             .attr("stroke-width", 2);
 
-        // In-sample dots: solid black
+        // Invisible wide line for easier hover
+        obsG.append("path")
+            .datum(recentObserved)
+            .attr("d", line)
+            .attr("fill", "none")
+            .attr("stroke", "transparent")
+            .attr("stroke-width", 14)
+            .style("pointer-events", "stroke")
+            .style("cursor", "default")
+            .on("mouseenter", function (event) {
+                showNearestObsTooltip(event, recentObserved, refDateObj);
+            })
+            .on("mousemove", function (event) {
+                showNearestObsTooltip(event, recentObserved, refDateObj);
+            })
+            .on("mouseleave", hideTrajTooltip);
+
+        // In-sample dots: solid black with invisible hit targets
+        const allDots = [...inSample.map(d => ({ ...d, label: "Observed" })),
+                         ...outOfSample.map(d => ({ ...d, label: "Observed (out-of-sample)" }))];
+
+        // Invisible hit targets (larger radius)
+        obsG.selectAll(".obs-hit")
+            .data(allDots)
+            .join("circle")
+            .attr("class", "obs-hit")
+            .attr("cx", d => trajX(d.date))
+            .attr("cy", d => trajY(d.value))
+            .attr("r", 10)
+            .attr("fill", "transparent")
+            .style("pointer-events", "all")
+            .style("cursor", "default")
+            .on("mouseenter", (event, d) => showObsTooltip(event, d, d.label))
+            .on("mousemove", (event) => positionTrajTooltip(event))
+            .on("mouseleave", hideTrajTooltip);
+
+        // Visible in-sample dots
         obsG.selectAll(".obs-in")
             .data(inSample)
             .join("circle")
             .attr("class", "obs-in")
             .attr("cx", d => trajX(d.date))
             .attr("cy", d => trajY(d.value))
-            .attr("r", 3)
+            .attr("r", 3.5)
             .attr("fill", "#1a1a1a")
             .attr("stroke", "none")
-            .style("pointer-events", "all")
-            .style("cursor", "default")
-            .on("mouseenter", (event, d) => showObsTooltip(event, d, "Observed"))
-            .on("mousemove", (event) => positionTrajTooltip(event))
-            .on("mouseleave", hideTrajTooltip);
+            .style("pointer-events", "none");
 
-        // Out-of-sample dots: white fill, black border
+        // Visible out-of-sample dots
         obsG.selectAll(".obs-out")
             .data(outOfSample)
             .join("circle")
@@ -309,11 +341,7 @@ function drawTrajectories() {
             .attr("fill", "#fff")
             .attr("stroke", "#1a1a1a")
             .attr("stroke-width", 1.5)
-            .style("pointer-events", "all")
-            .style("cursor", "default")
-            .on("mouseenter", (event, d) => showObsTooltip(event, d, "Observed (out-of-sample)"))
-            .on("mousemove", (event) => positionTrajTooltip(event))
-            .on("mouseleave", hideTrajTooltip);
+            .style("pointer-events", "none");
     }
 
     // --- Click-to-nearest-reference-date interaction ---
@@ -556,11 +584,29 @@ function updateTrajLegend() {
 
 // --- Trajectory chart tooltips ---
 
+function showNearestObsTooltip(event, data, refDateObj) {
+    const [mx] = d3.pointer(event, trajChartG.node());
+    const mouseDate = trajX.invert(mx);
+    let nearest = data[0];
+    let minDist = Infinity;
+    data.forEach(d => {
+        const dist = Math.abs(d.date - mouseDate);
+        if (dist < minDist) { minDist = dist; nearest = d; }
+    });
+    const label = nearest.date > refDateObj ? "Observed (out-of-sample)" : "Observed";
+    showObsTooltip(event, nearest, label);
+}
+
 function showObsTooltip(event, d, label) {
     const fmt = d3.timeFormat("%b %d, %Y");
     const valFmt = d3.format(",.0f");
+    const rateFmt = d3.format(",.2f");
     const tt = trajTooltip();
-    tt.html(`<strong>${label}</strong><br>${fmt(d.date)}<br>${valFmt(d.value)} hospitalizations`);
+    let html = `<strong>${label}</strong><br>Week ending ${fmt(d.date)}<br>${valFmt(d.value)} hospitalizations`;
+    if (d.rate != null) {
+        html += `<br>${rateFmt(d.rate)} per 100k`;
+    }
+    tt.html(html);
     tt.classed("visible", true);
     positionTrajTooltip(event);
 }

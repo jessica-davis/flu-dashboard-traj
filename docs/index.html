@@ -15,7 +15,7 @@
                 <h1>Influenza Hospitalization Forecast</h1>
                 <p class="subtitle">Weekly forecasts powered by EpyStrain ensemble model</p>
             </div>
-            <button class="tour-btn" onclick="startTour()">Guided Tour</button>
+            <a class="about-link" href="about.html">About</a>
         </div>
     </header>
 
@@ -25,6 +25,7 @@
             <button class="tab active" data-tab="trend">Influenza Trend</button>
             <button class="tab" data-tab="activity">Influenza Activity</button>
             <button class="tab" data-tab="admissions">Weekly Hospital Admissions</button>
+            <button class="tour-btn" onclick="startTour()">Guided Tour</button>
         </div>
 
         <!-- Top section: map card + gauges card side by side -->
@@ -34,13 +35,19 @@
                 <div class="legend-container" id="legend"></div>
                 <div class="map-with-controls">
                     <div class="map-left-controls">
-                        <div class="seg-group horizon-control" id="date-buttons">
-                            <!-- Populated by JS -->
+                        <div class="control-group">
+                            <div class="control-title">Forecast Week</div>
+                            <div class="seg-group horizon-control" id="date-buttons">
+                                <!-- Populated by JS -->
+                            </div>
                         </div>
-                        <div class="seg-group estimate-control" id="estimate-buttons">
-                            <button class="seg-btn estimate-seg active" data-estimate="most_likely">Most Likely</button>
-                            <button class="seg-btn estimate-seg" data-estimate="lower">Lower End</button>
-                            <button class="seg-btn estimate-seg" data-estimate="upper">Upper End</button>
+                        <div class="control-group">
+                            <div class="control-title">Uncertainty</div>
+                            <div class="seg-group estimate-control" id="estimate-buttons">
+                                <button class="seg-btn estimate-seg active" data-estimate="most_likely">Most Likely</button>
+                                <button class="seg-btn estimate-seg" data-estimate="lower">Lower End</button>
+                                <button class="seg-btn estimate-seg" data-estimate="upper">Upper End</button>
+                            </div>
                         </div>
                         <div class="rate-toggle" id="rate-toggle" style="display:none;">
                             <button class="rate-btn active" data-rate="total">Total</button>

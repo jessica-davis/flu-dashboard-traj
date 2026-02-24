@@ -59,6 +59,11 @@ h1 {
     cursor: pointer;
     transition: all 0.15s ease;
     white-space: nowrap;
+}
+
+.header-buttons {
+    display: flex;
+    gap: 8px;
     margin-top: 4px;
 }
 
@@ -67,12 +72,31 @@ h1 {
     color: #fff;
 }
 
+.about-link {
+    font-family: "Helvetica Neue", Arial, sans-serif;
+    font-size: 15px;
+    font-weight: 500;
+    color: #555;
+    text-decoration: none;
+    padding: 7px 0;
+    transition: color 0.15s ease;
+}
+
+.about-link:hover {
+    color: #1a1a1a;
+}
+
 /* --- Tab Bar --- */
 .tab-bar {
     display: flex;
     gap: 0;
+    align-items: center;
     border-bottom: 2px solid #e0e0e0;
     margin-bottom: 10px;
+}
+
+.tab-bar .tour-btn {
+    margin-left: auto;
 }
 
 .tab {
@@ -186,6 +210,23 @@ h1 {
     fill: #f9f9f9 !important;
     stroke: #ccc;
     stroke-dasharray: 2, 2;
+}
+
+/* --- Control Group with Title --- */
+.control-group {
+    display: flex;
+    flex-direction: column;
+}
+
+.control-title {
+    font-family: "Helvetica Neue", Arial, sans-serif;
+    font-size: 10px;
+    font-weight: 600;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+    color: #999;
+    margin-bottom: 4px;
+    padding-left: 2px;
 }
 
 /* --- Segmented Controls (vertical button groups) --- */
@@ -346,7 +387,7 @@ h1 {
 .gauges-stack {
     display: flex;
     flex-direction: column;
-    gap: 6px;
+    gap: 0;
     align-items: center;
 }
 
@@ -359,7 +400,7 @@ h1 {
     font-size: 13px;
     font-weight: 600;
     color: #333;
-    margin-bottom: 4px;
+    margin-bottom: 2px;
 }
 
 .gauge-wrapper svg {
@@ -379,7 +420,7 @@ h1 {
     display: flex;
     justify-content: center;
     gap: 14px;
-    margin-top: 4px;
+    margin-top: 0;
     min-height: 20px;
 }
 

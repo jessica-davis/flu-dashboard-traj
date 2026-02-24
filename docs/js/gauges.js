@@ -1,7 +1,7 @@
 // Semi-circular gauge components with animated needle
 
 const GAUGE_WIDTH = 240;
-const GAUGE_HEIGHT = 150;
+const GAUGE_HEIGHT = 125;
 const GAUGE_RADIUS = 80;
 const GAUGE_INNER_RADIUS = 48;
 const GAUGE_CENTER_Y = GAUGE_HEIGHT - 16;

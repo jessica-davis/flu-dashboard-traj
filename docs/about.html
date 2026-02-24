@@ -1,0 +1,88 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>About — Influenza Hospitalization Forecast</title>
+    <link rel="stylesheet" href="css/style.css">
+    <style>
+        .about-page {
+            max-width: 680px;
+            margin: 0 auto;
+            padding: 40px 24px 80px;
+            font-family: "Helvetica Neue", Arial, sans-serif;
+            color: #333;
+            line-height: 1.7;
+        }
+        .about-page h2 {
+            font-size: 22px;
+            font-weight: 700;
+            color: #1a1a1a;
+            margin: 32px 0 12px;
+        }
+        .about-page h2:first-of-type {
+            margin-top: 20px;
+        }
+        .about-page p {
+            font-size: 14px;
+            margin-bottom: 12px;
+        }
+        .about-page ul {
+            font-size: 14px;
+            margin: 0 0 12px 20px;
+            padding: 0;
+        }
+        .about-page li {
+            margin-bottom: 8px;
+        }
+        .back-link {
+            font-family: "Helvetica Neue", Arial, sans-serif;
+            font-size: 13px;
+            color: #555;
+            text-decoration: none;
+        }
+        .back-link:hover {
+            color: #1a1a1a;
+        }
+    </style>
+</head>
+<body>
+    <header>
+        <div class="header-row">
+            <div>
+                <h1>Influenza Hospitalization Forecast</h1>
+                <p class="subtitle">Weekly forecasts powered by EpyStrain ensemble model</p>
+            </div>
+            <a class="back-link" href="index.html">&larr; Back to Dashboard</a>
+        </div>
+    </header>
+
+    <div class="about-page">
+        <h2>About This Dashboard</h2>
+        <p>This dashboard displays weekly influenza hospitalization forecasts for U.S. states and territories, powered by the <strong>EpyStrain ensemble model</strong>. Forecasts are generated each week and include projections for 1–4 weeks ahead.</p>
+
+        <h2>Dashboard Views</h2>
+        <ul>
+            <li><strong>Influenza Trend</strong> — Whether hospitalizations are forecast to increase, decrease, or remain stable.</li>
+            <li><strong>Influenza Activity</strong> — The projected level of influenza activity (low, moderate, high, very high).</li>
+            <li><strong>Weekly Hospital Admissions</strong> — Estimated hospitalization counts, available as totals or per 100k population.</li>
+        </ul>
+
+        <h2>Uncertainty Estimates</h2>
+        <p>Each forecast includes uncertainty estimates. <strong>Most Likely</strong> shows the median projection, while <strong>Lower End</strong> and <strong>Upper End</strong> reflect the 10th and 90th percentiles of the forecast distribution.</p>
+
+        <h2>Trajectory Forecasts</h2>
+        <p>The trajectory chart shows individual model simulations for a selected state. Click any state on the map to view its trajectories. Historical season context lines can be toggled on for comparison.</p>
+
+        <h2>Data Sources</h2>
+        <p>Hospitalization data is sourced from the CDC's National Healthcare Safety Network (NHSN). Forecasts are produced by the EpyStrain ensemble model.</p>
+
+        <h2>Contact</h2>
+        <p>For questions or feedback, please contact <strong>[contact info]</strong>.</p>
+    </div>
+
+    <footer class="funding-footer">
+        This work was supported by xxxx
+    </footer>
+</body>
+</html>
