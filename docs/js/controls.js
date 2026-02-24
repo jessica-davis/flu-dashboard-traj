@@ -74,8 +74,8 @@ function buildDateButtons() {
                 updateAll();
             });
 
-        btn.append("span").attr("class", "date-label").text(label);
         btn.append("span").attr("class", "date-range").text(dateRange);
+        btn.append("span").attr("class", "date-label").text(label);
     }
 }
 

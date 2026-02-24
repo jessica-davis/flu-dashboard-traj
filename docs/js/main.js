@@ -28,6 +28,16 @@ async function init() {
         // Auto-detect most recent reference date
         AppState.currentRefDate = dashboardData.most_recent_reference_date;
 
+        // Display last-updated timestamp
+        const lastUpdatedEl = document.getElementById("last-updated");
+        if (lastUpdatedEl && AppState.currentRefDate) {
+            const d = new Date(AppState.currentRefDate + "T00:00:00");
+            const months = ["Jan", "Feb", "Mar", "Apr", "May", "Jun",
+                "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"];
+            const formatted = `${months[d.getMonth()]} ${d.getDate()}, ${d.getFullYear()}`;
+            lastUpdatedEl.textContent = `\u00A0\u00A0|\u00A0\u00A0Last Updated: ${formatted}`;
+        }
+
         // Initialize components
         initControls();
         initMap(topoData);

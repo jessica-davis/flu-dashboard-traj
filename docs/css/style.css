@@ -47,6 +47,12 @@ h1 {
     font-weight: 400;
 }
 
+.last-updated {
+    font-size: 12px;
+    color: #999;
+    font-weight: 400;
+}
+
 .tour-btn {
     font-family: "Helvetica Neue", Arial, sans-serif;
     font-size: 13px;
@@ -147,17 +153,18 @@ h1 {
 }
 
 .card-gauges {
-    width: 340px;
+    width: 380px;
     flex-shrink: 0;
     display: flex;
     flex-direction: column;
+    padding: 20px;
 }
 
 /* --- Legend (inside map card) --- */
 .legend-container {
     display: flex;
-    justify-content: center;
-    margin: 0 0 6px;
+    justify-content: flex-start;
+    margin: 0;
 }
 
 .legend-container svg {
@@ -181,6 +188,7 @@ h1 {
 .map-container {
     flex: 1;
     min-width: 0;
+    position: relative;
 }
 
 #us-map {
@@ -280,14 +288,16 @@ h1 {
 
 .horizon-control .seg-btn .date-range {
     display: block;
-    font-size: 9px;
-    font-weight: 400;
-    opacity: 0.6;
-    margin-top: 1px;
+    font-size: 11px;
+    font-weight: 600;
 }
 
-.horizon-control .seg-btn.active .date-range {
+.horizon-control .seg-btn .date-label {
+    display: block;
+    font-size: 9px;
+    font-weight: 400;
     opacity: 0.5;
+    margin-top: 1px;
 }
 
 /* --- Estimate Control (light/secondary style) --- */
@@ -360,8 +370,8 @@ h1 {
     font-family: "Helvetica Neue", Arial, sans-serif;
     color: #555;
     line-height: 1.5;
-    margin-bottom: 12px;
-    padding-bottom: 10px;
+    margin-bottom: 14px;
+    padding-bottom: 12px;
     border-bottom: 1px solid #eee;
 }
 
@@ -375,21 +385,40 @@ h1 {
     color: #1a1a1a;
 }
 
-.overview-secondary {
-    font-size: 11px;
-    color: #777;
+.map-trend-summary {
+    font-family: "Helvetica Neue", Arial, sans-serif;
+    font-size: 12px;
+    color: #555;
+    text-align: center;
+    padding: 4px 12px 6px;
+    line-height: 1.4;
 }
 
-.overview-secondary strong {
-    color: #555;
+.map-trend-summary strong {
+    color: #1a1a1a;
     font-weight: 700;
 }
 
 .gauges-stack {
     display: flex;
     flex-direction: column;
-    gap: 0;
+    gap: 8px;
     align-items: center;
+}
+
+.trend-arrow-wrapper {
+    text-align: center;
+}
+
+.trend-arrow-wrapper svg {
+    display: block;
+    margin: 0 auto;
+}
+
+.trend-arrow-label {
+    font-family: "Helvetica Neue", Arial, sans-serif;
+    text-align: center;
+    margin-bottom: 2px;
 }
 
 .gauge-wrapper {

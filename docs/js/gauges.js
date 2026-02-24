@@ -6,8 +6,11 @@ const GAUGE_RADIUS = 80;
 const GAUGE_INNER_RADIUS = 48;
 const GAUGE_CENTER_Y = GAUGE_HEIGHT - 16;
 
+const ARROW_WIDTH = 200;
+const ARROW_HEIGHT = 100;
+
 function initGauges() {
-    createGauge("#gauge-trend", "trend");
+    createTrendArrow();
     createGauge("#gauge-activity", "activity");
 }
 
@@ -79,8 +82,80 @@ function createGauge(selector, type) {
         .attr("fill", "#1a1a1a");
 }
 
+// --- Trend arrow indicator ---
+
+function createTrendArrow() {
+    const svg = d3.select("#trend-arrow-svg")
+        .attr("width", ARROW_WIDTH)
+        .attr("height", ARROW_HEIGHT);
+
+    const g = svg.append("g")
+        .attr("class", "trend-arrow-group")
+        .attr("transform", `translate(${ARROW_WIDTH / 2}, ${ARROW_HEIGHT / 2})`);
+
+    // Arrow shape pointing right (stable = 0°), centered at origin
+    g.append("path")
+        .attr("class", "trend-arrow-path")
+        .attr("d", "M-32,-10 L18,-10 L18,-22 L48,0 L18,22 L18,10 L-32,10 Z")
+        .attr("fill", "#E0E0E0")
+        .attr("stroke", "#bbb")
+        .attr("stroke-width", 1);
+}
+
+function updateTrendArrow() {
+    const refDate = AppState.currentRefDate;
+    const horizon = AppState.currentHorizon;
+    const entry = dashboardData.data[refDate]?.["US"]?.[String(horizon)];
+    if (!entry) return;
+
+    const probs = entry.trend_probs;
+    const mostLikely = entry.trend_most_likely;
+
+    // Map each category to a rotation angle (degrees)
+    // Negative = arrow points up-left (decrease), positive = up-right (increase)
+    const angleMap = {
+        large_decrease: -60,
+        decrease: -30,
+        stable: 0,
+        increase: 30,
+        large_increase: 60
+    };
+
+    // Weighted angle from probabilities
+    let weightedAngle = 0;
+    let totalWeight = 0;
+    TREND_ORDER.forEach(cat => {
+        const w = probs[cat] || 0;
+        weightedAngle += angleMap[cat] * w;
+        totalWeight += w;
+    });
+    const rotation = totalWeight > 0 ? weightedAngle / totalWeight : 0;
+
+    // Animate rotation (negative because SVG positive rotation is clockwise,
+    // but we want "increase" to point upward)
+    d3.select("#trend-arrow-svg").select(".trend-arrow-group")
+        .transition()
+        .duration(500)
+        .ease(d3.easeCubicOut)
+        .attr("transform",
+            `translate(${ARROW_WIDTH / 2}, ${ARROW_HEIGHT / 2}) rotate(${-rotation})`);
+
+    // Color arrow by most likely category
+    const isStable = mostLikely === "stable";
+    d3.select("#trend-arrow-svg").select(".trend-arrow-path")
+        .transition()
+        .duration(500)
+        .attr("fill", TREND_COLORS[mostLikely] || "#E0E0E0")
+        .attr("stroke", isStable ? "#bbb" : "none");
+
+    // Update label below arrow
+    const label = TREND_LABELS[mostLikely] || "";
+    d3.select("#trend-arrow-label")
+        .html(`<span style="color:${TREND_COLORS[mostLikely]};font-weight:700;font-size:15px">${label}</span>`);
+}
+
 function updateGauges() {
-    updateSingleGauge("#gauge-trend", "trend");
+    updateTrendArrow();
     updateSingleGauge("#gauge-activity", "activity");
     updateOverviewText();
     updateProbabilityLabels();
@@ -178,20 +253,9 @@ function updateOverviewText() {
 
     d3.select("#overview-primary").html(para1);
 
-    // Paragraph 2: State trend aggregation for selected horizon
+    // Map summary: tab-dependent state aggregation
     const horizonData = dashboardData.data[refDate];
     if (!horizonData) return;
-
-    let increasing = 0, decreasing = 0, stable = 0;
-    locationsData.forEach(loc => {
-        if (loc.fips === "US") return;
-        const stateEntry = horizonData[loc.fips]?.[String(horizon)];
-        if (!stateEntry) return;
-        const trend = stateEntry.trend_most_likely;
-        if (trend === "increase" || trend === "large_increase") increasing++;
-        else if (trend === "decrease" || trend === "large_decrease") decreasing++;
-        else stable++;
-    });
 
     const targetSat = new Date(refDt);
     targetSat.setDate(targetSat.getDate() + horizon * 7);
@@ -200,11 +264,56 @@ function updateOverviewText() {
     const dateStr = `${formatShortDate(targetSun)}\u2013${formatShortDate(targetSat)}`;
     const horizonLabel = horizon === 0 ? "(current week)" : `(+${horizon} week${horizon > 1 ? "s" : ""})`;
 
-    const para2 = `For the week of ${dateStr} ${horizonLabel}, ` +
-        `<strong>${increasing}</strong> state${increasing !== 1 ? "s" : ""} forecast increasing, ` +
-        `<strong>${decreasing}</strong> decreasing, and <strong>${stable}</strong> stable.`;
+    const tab = AppState.currentTab;
+    let para2 = "";
 
-    d3.select("#overview-secondary").html(para2);
+    if (tab === "trend") {
+        let increasing = 0, decreasing = 0, stableCount = 0;
+        locationsData.forEach(loc => {
+            if (loc.fips === "US") return;
+            const stateEntry = horizonData[loc.fips]?.[String(horizon)];
+            if (!stateEntry) return;
+            const trend = stateEntry.trend_most_likely;
+            if (trend === "increase" || trend === "large_increase") increasing++;
+            else if (trend === "decrease" || trend === "large_decrease") decreasing++;
+            else stableCount++;
+        });
+        para2 = `For the week of ${dateStr} ${horizonLabel}, ` +
+            `<strong>${increasing}</strong> state${increasing !== 1 ? "s" : ""} forecast increasing, ` +
+            `<strong>${decreasing}</strong> decreasing, and <strong>${stableCount}</strong> stable.`;
+    } else if (tab === "activity") {
+        const counts = { low: 0, moderate: 0, high: 0, very_high: 0 };
+        locationsData.forEach(loc => {
+            if (loc.fips === "US") return;
+            const stateEntry = horizonData[loc.fips]?.[String(horizon)];
+            if (!stateEntry) return;
+            const activity = stateEntry.activity_most_likely;
+            if (counts[activity] !== undefined) counts[activity]++;
+        });
+        para2 = `For the week of ${dateStr} ${horizonLabel}, ` +
+            `<strong>${counts.very_high}</strong> state${counts.very_high !== 1 ? "s" : ""} at very high activity, ` +
+            `<strong>${counts.high}</strong> high, ` +
+            `<strong>${counts.moderate}</strong> moderate, and ` +
+            `<strong>${counts.low}</strong> low.`;
+    } else if (tab === "admissions") {
+        const isPerCap = AppState.admissionsRate === "percapita";
+        const usEntry = horizonData["US"]?.[String(horizon)];
+        if (usEntry) {
+            const estimate = AppState.currentEstimate;
+            let raw;
+            if (estimate === "most_likely") raw = usEntry.median_value;
+            else if (estimate === "lower") raw = usEntry.p10_value;
+            else raw = usEntry.p90_value;
+            const fmt = isPerCap ? d3.format(",.1f") : d3.format(",.0f");
+            const pop = fipsToPopulation["US"];
+            const val = isPerCap && pop ? raw / pop * 100000 : raw;
+            const unit = isPerCap ? "per 100k" : "hospitalizations";
+            para2 = `For the week of ${dateStr} ${horizonLabel}, ` +
+                `an estimated <strong>${fmt(val)}</strong> ${unit} nationally.`;
+        }
+    }
+
+    d3.select("#map-trend-summary").html(para2);
 }
 
 // --- Helper functions ---

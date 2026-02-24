@@ -27,6 +27,23 @@ function initMap(topoData) {
 
     mapPath = d3.geoPath().projection(projection);
 
+    // Hatched pattern for "No Data" states
+    const defs = mapSvg.append("defs");
+    const pattern = defs.append("pattern")
+        .attr("id", "no-data-pattern")
+        .attr("width", 6)
+        .attr("height", 6)
+        .attr("patternUnits", "userSpaceOnUse")
+        .attr("patternTransform", "rotate(45)");
+    pattern.append("rect")
+        .attr("width", 6).attr("height", 6)
+        .attr("fill", "#f5f5f5");
+    pattern.append("line")
+        .attr("x1", 0).attr("y1", 0)
+        .attr("x2", 0).attr("y2", 6)
+        .attr("stroke", "#ddd")
+        .attr("stroke-width", 1.5);
+
     mapSvg.selectAll(".state")
         .data(stateFeatures)
         .join("path")
@@ -60,7 +77,7 @@ function addDCInset() {
         .attr("width", boxSize)
         .attr("height", boxSize)
         .attr("rx", 2)
-        .attr("fill", getColorForFips("11") || NO_DATA_COLOR)
+        .attr("fill", getColorForFips("11") || "url(#no-data-pattern)")
         .attr("stroke", "#999")
         .attr("stroke-width", 0.5)
         .attr("cursor", "pointer")
@@ -155,7 +172,7 @@ function getColorForFips(fips) {
 
     if (type === "admissions") {
         const val = getAdmissionValue(fips);
-        if (val == null) return NO_DATA_COLOR;
+        if (val == null) return "url(#no-data-pattern)";
         const scale = getAdmissionsColorScale();
         return scale(val);
     }
@@ -172,12 +189,12 @@ function getColorForFips(fips) {
     }
 
     const colorMap = type === "trend" ? TREND_COLORS : ACTIVITY_COLORS;
-    return colorMap[category] || NO_DATA_COLOR;
+    return colorMap[category] || "url(#no-data-pattern)";
 }
 
 function getStateColor(d) {
     const fips = getStateFips(d);
-    return getColorForFips(fips) || NO_DATA_COLOR;
+    return getColorForFips(fips) || "url(#no-data-pattern)";
 }
 
 function updateMapColors() {
@@ -189,7 +206,7 @@ function updateMapColors() {
     mapSvg.select(".dc-inset-box")
         .transition()
         .duration(300)
-        .attr("fill", getColorForFips("11") || NO_DATA_COLOR);
+        .attr("fill", getColorForFips("11") || "url(#no-data-pattern)");
 }
 
 // --- State click → update trajectory chart ---

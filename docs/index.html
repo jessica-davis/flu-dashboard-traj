@@ -13,7 +13,7 @@
         <div class="header-row">
             <div>
                 <h1>Influenza Hospitalization Forecast</h1>
-                <p class="subtitle">Weekly forecasts powered by EpyStrain ensemble model</p>
+                <p class="subtitle">Weekly forecasts powered by EpyStrain ensemble model <span class="last-updated" id="last-updated"></span></p>
             </div>
             <a class="about-link" href="about.html">About</a>
         </div>
@@ -32,7 +32,7 @@
         <div class="cards-row">
             <!-- Map card -->
             <div class="card card-map">
-                <div class="legend-container" id="legend"></div>
+                <div class="map-trend-summary" id="map-trend-summary"></div>
                 <div class="map-with-controls">
                     <div class="map-left-controls">
                         <div class="control-group">
@@ -56,6 +56,7 @@
                     </div>
                     <div class="map-container">
                         <svg id="us-map"></svg>
+                        <div class="legend-container" id="legend"></div>
                     </div>
                 </div>
                 <button class="info-btn" data-info="map" aria-label="Info">i</button>
@@ -65,18 +66,18 @@
             <div class="card card-gauges">
                 <div class="gauges-overview" id="gauges-overview">
                     <p class="overview-primary" id="overview-primary"></p>
-                    <p class="overview-secondary" id="overview-secondary"></p>
                 </div>
                 <div class="gauges-stack">
-                    <div class="gauge-wrapper">
-                        <h3 class="gauge-title">Trend Forecast</h3>
-                        <svg id="gauge-trend"></svg>
-                        <div class="prob-labels" id="gauge-trend-labels"></div>
-                    </div>
                     <div class="gauge-wrapper">
                         <h3 class="gauge-title">Activity Level</h3>
                         <svg id="gauge-activity"></svg>
                         <div class="prob-labels" id="gauge-activity-labels"></div>
+                    </div>
+                    <div class="trend-arrow-wrapper">
+                        <h3 class="gauge-title">Trend Forecast</h3>
+                        <svg id="trend-arrow-svg"></svg>
+                        <div class="trend-arrow-label" id="trend-arrow-label"></div>
+                        <div class="prob-labels" id="gauge-trend-labels"></div>
                     </div>
                 </div>
                 <button class="info-btn" data-info="gauges" aria-label="Info">i</button>
