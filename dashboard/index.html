@@ -1,0 +1,122 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Influenza Hospitalization Forecast</title>
+    <link rel="stylesheet" href="css/style.css">
+    <script src="https://d3js.org/d3.v7.min.js"></script>
+    <script src="https://d3js.org/topojson.v3.min.js"></script>
+</head>
+<body>
+    <header>
+        <h1>Influenza Hospitalization Forecast</h1>
+        <p class="subtitle">Weekly forecasts powered by EpyStrain ensemble model</p>
+    </header>
+
+    <main>
+        <!-- Date selector -->
+        <div class="date-buttons" id="date-buttons"></div>
+
+        <!-- Tab bar -->
+        <div class="tab-bar" id="tab-bar">
+            <button class="tab active" data-tab="trend">Influenza Trend</button>
+            <button class="tab" data-tab="activity">Influenza Activity</button>
+        </div>
+
+        <!-- Legend bar (above map) -->
+        <div class="legend-container" id="legend"></div>
+
+        <!-- Top section: map card + gauges card side by side -->
+        <div class="cards-row">
+            <!-- Map card -->
+            <div class="card card-map">
+                <div class="map-controls-row">
+                    <div class="map-container">
+                        <svg id="us-map"></svg>
+                    </div>
+                    <div class="side-controls">
+                        <div class="estimate-buttons" id="estimate-buttons">
+                            <button class="estimate-btn active" data-estimate="most_likely">
+                                <span class="btn-label">Most Likely</span>
+                                <span class="btn-subtitle">Highest probability forecast</span>
+                            </button>
+                            <button class="estimate-btn" data-estimate="lower">
+                                <span class="btn-label">Lower End</span>
+                                <span class="btn-subtitle">90% chance of a higher outcome</span>
+                            </button>
+                            <button class="estimate-btn" data-estimate="upper">
+                                <span class="btn-label">Upper End</span>
+                                <span class="btn-subtitle">90% chance of a lower outcome</span>
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Gauges card -->
+            <div class="card card-gauges">
+                <p class="gauges-overview" id="gauges-overview"></p>
+                <div class="gauges-stack">
+                    <div class="gauge-wrapper">
+                        <h3 class="gauge-title">Trend Forecast</h3>
+                        <svg id="gauge-trend"></svg>
+                    </div>
+                    <div class="gauge-wrapper">
+                        <h3 class="gauge-title">Activity Level</h3>
+                        <svg id="gauge-activity"></svg>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Trajectory section -->
+        <div class="card card-trajectories" id="trajectory-section">
+            <div class="traj-header">
+                <h2 class="section-title">Trajectory Specific Forecasts</h2>
+                <div class="traj-controls">
+                    <label class="traj-label">
+                        Location
+                        <select id="traj-location" class="traj-select"></select>
+                    </label>
+                    <label class="traj-label">
+                        Trajectories
+                        <select id="traj-count" class="traj-select">
+                            <option value="10">10</option>
+                            <option value="25">25</option>
+                            <option value="50" selected>50</option>
+                            <option value="100">100</option>
+                            <option value="200">200</option>
+                        </select>
+                    </label>
+                    <label class="traj-label">
+                        Color by horizon
+                        <select id="traj-horizon" class="traj-select">
+                            <option value="0">H0 (Current)</option>
+                            <option value="1">H1 (+1 Week)</option>
+                            <option value="2">H2 (+2 Weeks)</option>
+                            <option value="3">H3 (+3 Weeks)</option>
+                        </select>
+                    </label>
+                    <button class="context-btn" id="context-btn">Add Context</button>
+                </div>
+            </div>
+            <div class="traj-chart-container">
+                <svg id="traj-chart"></svg>
+            </div>
+        </div>
+    </main>
+
+    <!-- Tooltip containers -->
+    <div class="tooltip" id="tooltip"></div>
+    <div class="traj-tip" id="traj-tooltip"></div>
+
+    <script src="js/colors.js"></script>
+    <script src="js/legend.js"></script>
+    <script src="js/gauges.js"></script>
+    <script src="js/map.js"></script>
+    <script src="js/controls.js"></script>
+    <script src="js/trajectories.js"></script>
+    <script src="js/main.js"></script>
+</body>
+</html>
