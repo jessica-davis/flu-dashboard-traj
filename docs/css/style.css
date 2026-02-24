@@ -97,6 +97,7 @@ h1 {
 
 .tab-bar .tour-btn {
     margin-left: auto;
+    margin-bottom: 6px;
 }
 
 .tab {
@@ -555,10 +556,24 @@ h1 {
     margin-bottom: 12px;
 }
 
+.section-divider {
+    border: none;
+    border-top: 1px solid #e0e0e0;
+    margin: 24px 0 16px;
+}
+
 .section-title {
     font-size: 18px;
     font-weight: 700;
     color: #1a1a1a;
+}
+
+.section-subtitle {
+    font-family: "Helvetica Neue", Arial, sans-serif;
+    font-size: 13px;
+    color: #888;
+    margin-top: 2px;
+    margin-bottom: 12px;
 }
 
 .traj-controls {
