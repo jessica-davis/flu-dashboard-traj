@@ -20,58 +20,59 @@
     </header>
 
     <main>
-        <!-- Date selector -->
-        <div class="date-buttons" id="date-buttons"></div>
-
         <!-- Tab bar -->
         <div class="tab-bar" id="tab-bar">
             <button class="tab active" data-tab="trend">Influenza Trend</button>
             <button class="tab" data-tab="activity">Influenza Activity</button>
+            <button class="tab" data-tab="admissions">Weekly Hospital Admissions</button>
         </div>
-
-        <!-- Legend bar (above map) -->
-        <div class="legend-container" id="legend"></div>
 
         <!-- Top section: map card + gauges card side by side -->
         <div class="cards-row">
             <!-- Map card -->
             <div class="card card-map">
-                <div class="map-controls-row">
+                <div class="legend-container" id="legend"></div>
+                <div class="map-with-controls">
+                    <div class="map-left-controls">
+                        <div class="seg-group horizon-control" id="date-buttons">
+                            <!-- Populated by JS -->
+                        </div>
+                        <div class="seg-group estimate-control" id="estimate-buttons">
+                            <button class="seg-btn estimate-seg active" data-estimate="most_likely">Most Likely</button>
+                            <button class="seg-btn estimate-seg" data-estimate="lower">Lower End</button>
+                            <button class="seg-btn estimate-seg" data-estimate="upper">Upper End</button>
+                        </div>
+                        <div class="rate-toggle" id="rate-toggle" style="display:none;">
+                            <button class="rate-btn active" data-rate="total">Total</button>
+                            <button class="rate-btn" data-rate="percapita">Per 100k</button>
+                        </div>
+                    </div>
                     <div class="map-container">
                         <svg id="us-map"></svg>
                     </div>
-                    <div class="side-controls">
-                        <div class="estimate-buttons" id="estimate-buttons">
-                            <button class="estimate-btn active" data-estimate="most_likely">
-                                <span class="btn-label">Most Likely</span>
-                                <span class="btn-subtitle">Highest probability forecast</span>
-                            </button>
-                            <button class="estimate-btn" data-estimate="lower">
-                                <span class="btn-label">Lower End</span>
-                                <span class="btn-subtitle">90% chance of a higher outcome</span>
-                            </button>
-                            <button class="estimate-btn" data-estimate="upper">
-                                <span class="btn-label">Upper End</span>
-                                <span class="btn-subtitle">90% chance of a lower outcome</span>
-                            </button>
-                        </div>
-                    </div>
                 </div>
+                <button class="info-btn" data-info="map" aria-label="Info">i</button>
             </div>
 
             <!-- Gauges card -->
             <div class="card card-gauges">
-                <p class="gauges-overview" id="gauges-overview"></p>
+                <div class="gauges-overview" id="gauges-overview">
+                    <p class="overview-primary" id="overview-primary"></p>
+                    <p class="overview-secondary" id="overview-secondary"></p>
+                </div>
                 <div class="gauges-stack">
                     <div class="gauge-wrapper">
                         <h3 class="gauge-title">Trend Forecast</h3>
                         <svg id="gauge-trend"></svg>
+                        <div class="prob-labels" id="gauge-trend-labels"></div>
                     </div>
                     <div class="gauge-wrapper">
                         <h3 class="gauge-title">Activity Level</h3>
                         <svg id="gauge-activity"></svg>
+                        <div class="prob-labels" id="gauge-activity-labels"></div>
                     </div>
                 </div>
+                <button class="info-btn" data-info="gauges" aria-label="Info">i</button>
             </div>
         </div>
 
@@ -103,18 +104,29 @@
                             <option value="3">H3 (+3 Weeks)</option>
                         </select>
                     </label>
-                    <button class="context-btn" id="context-btn">Add Context</button>
+                    <div class="context-dropdown" id="context-dropdown">
+                        <button class="context-btn" id="context-btn">Add Context</button><button class="context-arrow" id="context-arrow">&#9662;</button>
+                        <div class="context-menu" id="context-menu"></div>
+                    </div>
                 </div>
             </div>
             <div class="traj-chart-container">
                 <svg id="traj-chart"></svg>
             </div>
+            <div class="traj-legend" id="traj-legend"></div>
+            <button class="info-btn" data-info="traj" aria-label="Info">i</button>
         </div>
     </main>
+
+    <footer class="funding-footer">
+        This work was supported by xxxx
+    </footer>
 
     <!-- Tooltip containers -->
     <div class="tooltip" id="tooltip"></div>
     <div class="traj-tip" id="traj-tooltip"></div>
+    <!-- Info popover -->
+    <div class="info-popover" id="info-popover"></div>
 
     <script src="js/colors.js"></script>
     <script src="js/legend.js"></script>

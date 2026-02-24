@@ -8,7 +8,14 @@ let trajSvg, trajX, trajY, trajChartG;
 let trajData = null;        // per-location trajectory data
 let targetDataAll = null;    // historical observed data
 let historicalSeasons = null; // seasonal curves for context
-let showContext = false;
+// Per-season visibility state (all enabled by default)
+let contextSeasons = {
+    "2022-23": true,
+    "2023-24": true,
+    "2024-25": true
+};
+let contextMenuOpen = false;
+let showContext = true;  // master toggle for all context lines
 
 // Shared tooltip element for the trajectory section
 const trajTooltip = () => d3.select("#traj-tooltip");
@@ -44,11 +51,15 @@ function initTrajectoryChart() {
     });
     d3.select("#traj-count").on("change", () => drawTrajectories());
     d3.select("#traj-horizon").on("change", () => drawTrajectories());
-    d3.select("#context-btn").on("click", function () {
-        showContext = !showContext;
-        d3.select(this).classed("active", showContext);
-        d3.select(this).text(showContext ? "Hide Context" : "Add Context");
-        drawTrajectories();
+    // Context dropdown: build checklist
+    initContextDropdown();
+
+    // Close context menu when clicking outside
+    document.addEventListener("click", (e) => {
+        if (!e.target.closest("#context-dropdown")) {
+            d3.select("#context-menu").classed("open", false);
+            contextMenuOpen = false;
+        }
     });
 
     // Load target data and historical seasons
@@ -92,8 +103,8 @@ function drawTrajectories() {
         .filter(d => d.value != null)
         .map(d => ({ date: new Date(d.date + "T00:00:00"), value: d.value }));
 
-    // Fixed start date: October 1 of current season
-    const showFrom = new Date("2025-10-01T00:00:00");
+    // Fixed start date: November 1 of current season
+    const showFrom = new Date("2025-11-01T00:00:00");
 
     const recentObserved = observedParsed.filter(d => d.date >= showFrom);
 
@@ -123,9 +134,10 @@ function drawTrajectories() {
         });
     }
 
-    // Add context season values to domain if showing
-    if (showContext && historicalSeasons?.[fips]) {
-        Object.values(historicalSeasons[fips]).forEach(season => {
+    // Add context season values to domain if any are showing
+    if (hasAnyContext() && historicalSeasons?.[fips]) {
+        Object.entries(historicalSeasons[fips]).forEach(([sName, season]) => {
+            if (!contextSeasons[sName]) return;
             season.forEach(d => {
                 if (d.value != null) allValues.push(d.value);
             });
@@ -176,11 +188,12 @@ function drawTrajectories() {
     const seasonsG = trajChartG.select(".layer-seasons");
     seasonsG.selectAll("*").remove();
 
-    if (showContext && historicalSeasons?.[fips]) {
+    if (hasAnyContext() && historicalSeasons?.[fips]) {
         const seasonNames = Object.keys(historicalSeasons[fips]);
         const currentSeasonStart = new Date("2025-10-01T00:00:00");
 
         seasonNames.forEach(sName => {
+            if (!contextSeasons[sName]) return;
             const season = historicalSeasons[fips][sName];
             const lineData = season
                 .filter(d => d.value != null)
@@ -384,6 +397,9 @@ function drawTrajectories() {
 
     // --- Draw inset donut chart ---
     drawDonut(fips, colorHorizon, innerH);
+
+    // --- Update trajectory legend ---
+    updateTrajLegend();
 }
 
 function drawDonut(fips, horizon, innerH) {
@@ -395,9 +411,12 @@ function drawDonut(fips, horizon, innerH) {
     if (!entry) return;
 
     const probs = entry.trend_probs;
-    const donutR = 50;
-    const donutInner = 28;
-    const cx = 70;
+    const donutR = Math.round(innerH * 0.275);
+    const donutInner = Math.round(donutR * 0.55);
+    // Center between Nov 23 and Nov 30 on the x-axis
+    const nov23 = new Date("2025-11-23T00:00:00");
+    const nov30 = new Date("2025-11-30T00:00:00");
+    const cx = (trajX(nov23) + trajX(nov30)) / 2;
     const cy = innerH / 2;
 
     const g = donutG.append("g")
@@ -444,20 +463,13 @@ function drawDonut(fips, horizon, innerH) {
         }
     });
 
-    // Center text: most likely category
+    // Center text: most likely category (full name)
     const mostLikely = entry.trend_most_likely;
-    const shortLabel = {
-        large_decrease: "Lg\u2193",
-        decrease: "Dec",
-        stable: "Stbl",
-        increase: "Inc",
-        large_increase: "Lg\u2191"
-    };
 
     g.append("text")
         .attr("class", "donut-label")
         .attr("y", 1)
-        .text(shortLabel[mostLikely] || "");
+        .text(TREND_LABELS[mostLikely] || "");
 
     // Title above donut
     g.append("text")
@@ -467,6 +479,79 @@ function drawDonut(fips, horizon, innerH) {
         .attr("font-size", "9px")
         .attr("fill", "#999")
         .text("Trend Dist.");
+}
+
+// --- Context dropdown checklist ---
+
+function initContextDropdown() {
+    const menu = d3.select("#context-menu");
+    menu.selectAll("*").remove();
+
+    Object.keys(contextSeasons).forEach(season => {
+        const label = menu.append("label");
+        label.append("input")
+            .attr("type", "checkbox")
+            .property("checked", contextSeasons[season])
+            .on("change", function () {
+                contextSeasons[season] = this.checked;
+                // If user unchecked all individually, turn master off
+                showContext = Object.values(contextSeasons).some(v => v);
+                updateContextBtnState();
+                drawTrajectories();
+            });
+        label.append("span")
+            .attr("class", "season-swatch")
+            .style("background", SEASON_COLORS[season] || "#ccc");
+        label.append("span").text(season);
+    });
+
+    // Main button: master toggle all context lines on/off
+    d3.select("#context-btn").on("click", function (e) {
+        e.stopPropagation();
+        showContext = !showContext;
+        // When toggling on, enable all seasons; when off, keep their state but hide all
+        if (showContext) {
+            Object.keys(contextSeasons).forEach(s => { contextSeasons[s] = true; });
+            // Update checkboxes
+            menu.selectAll("input[type='checkbox']").property("checked", true);
+        }
+        updateContextBtnState();
+        drawTrajectories();
+    });
+
+    // Arrow button: open/close the dropdown for individual season control
+    d3.select("#context-arrow").on("click", function (e) {
+        e.stopPropagation();
+        contextMenuOpen = !contextMenuOpen;
+        d3.select("#context-menu").classed("open", contextMenuOpen);
+    });
+
+    updateContextBtnState();
+}
+
+function updateContextBtnState() {
+    d3.select("#context-btn")
+        .classed("active", showContext)
+        .text(showContext ? "Hide Context" : "Add Context");
+}
+
+function hasAnyContext() {
+    return showContext && Object.values(contextSeasons).some(v => v);
+}
+
+// --- Trajectory legend ---
+
+function updateTrajLegend() {
+    const container = d3.select("#traj-legend");
+    container.selectAll("*").remove();
+
+    TREND_ORDER.forEach(cat => {
+        const item = container.append("span").attr("class", "traj-legend-item");
+        item.append("span")
+            .attr("class", "traj-legend-swatch")
+            .style("background", TREND_COLORS[cat]);
+        item.append("span").text(TREND_LABELS[cat]);
+    });
 }
 
 // --- Trajectory chart tooltips ---

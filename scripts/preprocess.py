@@ -21,7 +21,7 @@ from datetime import datetime, timedelta
 BASE_DIR = Path(__file__).resolve().parent.parent
 DATA_DIR = BASE_DIR / "data" / "processed"
 TRAJ_DIR = DATA_DIR / "trajectories"
-OUT_DIR = BASE_DIR / "dashboard" / "data"
+OUT_DIR = BASE_DIR / "docs" / "data"
 
 # --- Trend thresholds (rate per 100k) by horizon ---
 TREND_THRESHOLDS = {
@@ -362,6 +362,8 @@ def main():
 
                 median_value = float(h_traj["value"].median())
                 median_rate = median_value / population * 100000
+                p10_value = float(np.percentile(h_traj["value"].dropna(), 10))
+                p90_value = float(np.percentile(h_traj["value"].dropna(), 90))
 
                 loc_data[str(horizon)] = {
                     "trend_probs": {k: round(v, 4) for k, v in trend_probs.items()},
@@ -375,6 +377,8 @@ def main():
                     "forecast_date": forecast_date,
                     "median_value": round(median_value, 1),
                     "median_rate": round(median_rate, 2),
+                    "p10_value": round(p10_value, 1),
+                    "p90_value": round(p90_value, 1),
                 }
 
             if loc_data:

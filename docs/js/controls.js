@@ -1,8 +1,9 @@
-// Controls: tabs, estimate buttons, date selector
+// Controls: tabs, estimate buttons, date selector, rate toggle
 
 function initControls() {
     initTabs();
     initEstimateButtons();
+    initRateToggle();
     buildDateButtons();
 }
 
@@ -12,18 +13,37 @@ function initTabs() {
         AppState.currentTab = tab;
         d3.selectAll(".tab").classed("active", false);
         d3.select(this).classed("active", true);
+        updateRateToggleVisibility();
         updateAll();
     });
 }
 
 function initEstimateButtons() {
-    d3.selectAll(".estimate-btn").on("click", function () {
+    d3.selectAll(".estimate-seg").on("click", function () {
         const est = d3.select(this).attr("data-estimate");
         AppState.currentEstimate = est;
-        d3.selectAll(".estimate-btn").classed("active", false);
+        d3.selectAll(".estimate-seg").classed("active", false);
         d3.select(this).classed("active", true);
         updateAll();
     });
+}
+
+function initRateToggle() {
+    d3.selectAll(".rate-btn").on("click", function () {
+        const rate = d3.select(this).attr("data-rate");
+        AppState.admissionsRate = rate;
+        d3.selectAll(".rate-btn").classed("active", false);
+        d3.select(this).classed("active", true);
+        updateAll();
+    });
+    updateRateToggleVisibility();
+}
+
+function updateRateToggleVisibility() {
+    const toggle = document.getElementById("rate-toggle");
+    if (toggle) {
+        toggle.style.display = AppState.currentTab === "admissions" ? "flex" : "none";
+    }
 }
 
 function buildDateButtons() {
@@ -31,31 +51,31 @@ function buildDateButtons() {
     const container = d3.select("#date-buttons");
     container.selectAll("*").remove();
 
-    const horizonLabels = ["Current", "+1 Week", "+2 Weeks", "+3 Weeks", "+4 Weeks"];
+    const horizonLabels = {1: "+1 Wk", 2: "+2 Wk", 3: "+3 Wk", 4: "+4 Wk"};
 
-    for (let h = 0; h <= 4; h++) {
+    for (let h = 1; h <= 4; h++) {
         const targetSat = new Date(refDate + "T00:00:00");
         targetSat.setDate(targetSat.getDate() + h * 7);
 
         const targetSun = new Date(targetSat);
         targetSun.setDate(targetSun.getDate() - 6);
 
-        const label = horizonLabels[h];
+        const label = horizonLabels[h] || `+${h} Wk`;
         const dateRange = `${formatShortDate(targetSun)}\u2013${formatShortDate(targetSat)}`;
 
         const btn = container.append("button")
-            .attr("class", `date-btn${h === 0 ? " active" : ""}`)
+            .attr("class", `seg-btn${h === AppState.currentHorizon ? " active" : ""}`)
             .attr("data-horizon", h)
             .on("click", function () {
                 const horizon = +d3.select(this).attr("data-horizon");
                 AppState.currentHorizon = horizon;
-                d3.selectAll(".date-btn").classed("active", false);
+                container.selectAll(".seg-btn").classed("active", false);
                 d3.select(this).classed("active", true);
                 updateAll();
             });
 
-        btn.append("div").attr("class", "date-label").text(label);
-        btn.append("div").attr("class", "date-range").text(dateRange);
+        btn.append("span").attr("class", "date-label").text(label);
+        btn.append("span").attr("class", "date-range").text(dateRange);
     }
 }
 

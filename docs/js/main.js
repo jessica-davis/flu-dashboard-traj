@@ -4,8 +4,9 @@ const AppState = {
     currentTab: "trend",
     currentEstimate: "most_likely",
     currentRefDate: null,
-    currentHorizon: 0,
-    selectedState: "US"
+    currentHorizon: 1,
+    selectedState: "US",
+    admissionsRate: "total" // "total" or "percapita"
 };
 
 let dashboardData = null;
@@ -33,6 +34,7 @@ async function init() {
         initLegend();
         initGauges();
         initTrajectoryChart();
+        initInfoButtons();
 
         // Initial render
         updateAll();

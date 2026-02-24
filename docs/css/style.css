@@ -14,7 +14,7 @@ body {
     color: #333;
     max-width: 1200px;
     margin: 0 auto;
-    padding: 20px 24px 60px;
+    padding: 20px 24px 40px;
     -webkit-font-smoothing: antialiased;
 }
 
@@ -67,58 +67,12 @@ h1 {
     color: #fff;
 }
 
-/* --- Date Buttons --- */
-.date-buttons {
-    display: flex;
-    gap: 5px;
-    justify-content: center;
-    margin-bottom: 12px;
-}
-
-.date-btn {
-    padding: 6px 12px;
-    border: 1px solid #ddd;
-    border-radius: 5px;
-    background: #fff;
-    cursor: pointer;
-    text-align: center;
-    transition: all 0.15s ease;
-    min-width: 120px;
-}
-
-.date-btn:hover {
-    border-color: #999;
-}
-
-.date-btn.active {
-    background: #1a1a1a;
-    color: #fff;
-    border-color: #1a1a1a;
-}
-
-.date-btn .date-label {
-    font-family: "Helvetica Neue", Arial, sans-serif;
-    font-size: 12px;
-    font-weight: 600;
-}
-
-.date-btn .date-range {
-    font-family: "Helvetica Neue", Arial, sans-serif;
-    font-size: 10px;
-    color: #999;
-    margin-top: 1px;
-}
-
-.date-btn.active .date-range {
-    color: #bbb;
-}
-
 /* --- Tab Bar --- */
 .tab-bar {
     display: flex;
     gap: 0;
     border-bottom: 2px solid #e0e0e0;
-    margin-bottom: 8px;
+    margin-bottom: 10px;
 }
 
 .tab {
@@ -144,17 +98,6 @@ h1 {
     border-bottom-color: #1a1a1a;
 }
 
-/* --- Legend (above map) --- */
-.legend-container {
-    display: flex;
-    justify-content: center;
-    margin: 4px 0 8px;
-}
-
-.legend-container svg {
-    display: block;
-}
-
 /* --- Cards --- */
 .card {
     background: #fff;
@@ -162,6 +105,7 @@ h1 {
     border-radius: 8px;
     padding: 16px;
     box-shadow: 0 1px 4px rgba(0, 0, 0, 0.06);
+    position: relative;
 }
 
 /* --- Cards Row (map + gauges) --- */
@@ -178,17 +122,35 @@ h1 {
 }
 
 .card-gauges {
-    width: 300px;
+    width: 340px;
     flex-shrink: 0;
     display: flex;
     flex-direction: column;
 }
 
-/* --- Map Layout --- */
-.map-controls-row {
+/* --- Legend (inside map card) --- */
+.legend-container {
+    display: flex;
+    justify-content: center;
+    margin: 0 0 6px;
+}
+
+.legend-container svg {
+    display: block;
+}
+
+/* --- Map Layout: controls on the left, map on the right --- */
+.map-with-controls {
     display: flex;
     gap: 12px;
     align-items: flex-start;
+}
+
+.map-left-controls {
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+    flex-shrink: 0;
 }
 
 .map-container {
@@ -226,61 +188,134 @@ h1 {
     stroke-dasharray: 2, 2;
 }
 
-/* --- Side Controls (Estimate Buttons) --- */
-.side-controls {
-    width: 170px;
-    flex-shrink: 0;
-}
-
-.estimate-buttons {
+/* --- Segmented Controls (vertical button groups) --- */
+.seg-group {
     display: flex;
     flex-direction: column;
-    gap: 6px;
+    border-radius: 6px;
+    overflow: hidden;
 }
 
-.estimate-btn {
+.seg-btn {
+    font-family: "Helvetica Neue", Arial, sans-serif;
+    cursor: pointer;
+    transition: all 0.12s ease;
+    white-space: nowrap;
+    border: none;
+    outline: none;
+    text-align: left;
     display: block;
     width: 100%;
-    padding: 10px 12px;
-    border: 2px solid #e0e0e0;
+}
+
+/* --- Horizon Control (dark/primary style) --- */
+.horizon-control {
+    border: 1.5px solid #1a1a1a;
     border-radius: 6px;
-    background: #fff;
-    text-align: left;
-    cursor: pointer;
-    transition: all 0.15s ease;
 }
 
-.estimate-btn:hover {
-    border-color: #999;
-}
-
-.estimate-btn.active {
-    border-color: #1a1a1a;
-    background: #fafafa;
-}
-
-.estimate-btn .btn-label {
-    display: block;
-    font-family: "Helvetica Neue", Arial, sans-serif;
-    font-size: 13px;
+.horizon-control .seg-btn {
+    padding: 7px 12px;
+    font-size: 11px;
     font-weight: 600;
+    background: #fff;
+    color: #1a1a1a;
+    border-bottom: 1px solid #e0e0e0;
+}
+
+.horizon-control .seg-btn:last-child {
+    border-bottom: none;
+}
+
+.horizon-control .seg-btn:hover {
+    background: #f5f5f5;
+}
+
+.horizon-control .seg-btn.active {
+    background: #1a1a1a;
+    color: #fff;
+}
+
+.horizon-control .seg-btn .date-range {
+    display: block;
+    font-size: 9px;
+    font-weight: 400;
+    opacity: 0.6;
+    margin-top: 1px;
+}
+
+.horizon-control .seg-btn.active .date-range {
+    opacity: 0.5;
+}
+
+/* --- Estimate Control (light/secondary style) --- */
+.estimate-control {
+    border: 1px solid #ccc;
+    border-radius: 5px;
+}
+
+.estimate-control .seg-btn {
+    padding: 6px 12px;
+    font-size: 11px;
+    font-weight: 500;
+    background: #fff;
+    color: #666;
+    border-bottom: 1px solid #e8e8e8;
+}
+
+.estimate-control .seg-btn:last-child {
+    border-bottom: none;
+}
+
+.estimate-control .seg-btn:hover {
+    background: #fafafa;
     color: #333;
 }
 
-.estimate-btn .btn-subtitle {
-    display: block;
+.estimate-control .seg-btn.active {
+    background: #f0f0f0;
+    color: #1a1a1a;
+    font-weight: 600;
+}
+
+/* --- Rate Toggle (Total / Per 100k) --- */
+.rate-toggle {
+    display: flex;
+    border: 1px solid #ccc;
+    border-radius: 5px;
+    overflow: hidden;
+}
+
+.rate-btn {
     font-family: "Helvetica Neue", Arial, sans-serif;
     font-size: 10px;
-    font-weight: 400;
-    color: #999;
-    margin-top: 1px;
-    line-height: 1.3;
+    font-weight: 500;
+    padding: 5px 10px;
+    border: none;
+    background: #fff;
+    color: #666;
+    cursor: pointer;
+    transition: all 0.12s ease;
+}
+
+.rate-btn:first-child {
+    border-right: 1px solid #e8e8e8;
+}
+
+.rate-btn:hover {
+    background: #fafafa;
+    color: #333;
+}
+
+.rate-btn.active {
+    background: #f0f0f0;
+    color: #1a1a1a;
+    font-weight: 600;
 }
 
 /* --- Gauges Card --- */
 .gauges-overview {
     font-family: "Helvetica Neue", Arial, sans-serif;
-    font-size: 12px;
     color: #555;
     line-height: 1.5;
     margin-bottom: 12px;
@@ -288,10 +323,30 @@ h1 {
     border-bottom: 1px solid #eee;
 }
 
+.overview-primary {
+    font-size: 12px;
+    margin-bottom: 6px;
+    color: #333;
+}
+
+.overview-primary strong {
+    color: #1a1a1a;
+}
+
+.overview-secondary {
+    font-size: 11px;
+    color: #777;
+}
+
+.overview-secondary strong {
+    color: #555;
+    font-weight: 700;
+}
+
 .gauges-stack {
     display: flex;
     flex-direction: column;
-    gap: 4px;
+    gap: 6px;
     align-items: center;
 }
 
@@ -301,10 +356,10 @@ h1 {
 
 .gauge-title {
     font-family: "Helvetica Neue", Arial, sans-serif;
-    font-size: 12px;
+    font-size: 13px;
     font-weight: 600;
     color: #333;
-    margin-bottom: 2px;
+    margin-bottom: 4px;
 }
 
 .gauge-wrapper svg {
@@ -318,6 +373,74 @@ h1 {
     color: #666;
     margin-top: 2px;
     line-height: 1.3;
+}
+
+.prob-labels {
+    display: flex;
+    justify-content: center;
+    gap: 14px;
+    margin-top: 4px;
+    min-height: 20px;
+}
+
+.prob-label {
+    font-family: "Helvetica Neue", Arial, sans-serif;
+    line-height: 1.3;
+    white-space: nowrap;
+}
+
+/* --- Info Buttons --- */
+.info-btn {
+    position: absolute;
+    top: 10px;
+    right: 10px;
+    width: 22px;
+    height: 22px;
+    border-radius: 50%;
+    border: 1.5px solid #ccc;
+    background: #fff;
+    color: #999;
+    font-family: Georgia, serif;
+    font-size: 12px;
+    font-style: italic;
+    font-weight: 700;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    transition: all 0.12s ease;
+    padding: 0;
+    line-height: 1;
+    z-index: 5;
+}
+
+.info-btn:hover {
+    border-color: #666;
+    color: #333;
+    background: #f5f5f5;
+}
+
+.info-popover {
+    position: fixed;
+    z-index: 1100;
+    background: #fff;
+    border: 1px solid #ddd;
+    border-radius: 8px;
+    padding: 14px 16px;
+    box-shadow: 0 4px 16px rgba(0, 0, 0, 0.12);
+    font-family: "Helvetica Neue", Arial, sans-serif;
+    font-size: 12px;
+    color: #555;
+    line-height: 1.5;
+    max-width: 300px;
+    opacity: 0;
+    pointer-events: none;
+    transition: opacity 0.15s ease;
+}
+
+.info-popover.visible {
+    opacity: 1;
+    pointer-events: auto;
 }
 
 /* --- Tooltip --- */
@@ -423,13 +546,31 @@ h1 {
     color: #333;
 }
 
+.context-dropdown {
+    position: relative;
+    display: inline-block;
+}
+
 .context-btn {
     font-family: "Helvetica Neue", Arial, sans-serif;
     font-size: 12px;
     font-weight: 600;
-    padding: 6px 14px;
+    padding: 6px 12px;
     border: 1px solid #ddd;
-    border-radius: 4px;
+    border-right: none;
+    border-radius: 4px 0 0 4px;
+    background: #fff;
+    color: #333;
+    cursor: pointer;
+    transition: all 0.15s ease;
+}
+
+.context-arrow {
+    font-family: "Helvetica Neue", Arial, sans-serif;
+    font-size: 10px;
+    padding: 6px 8px;
+    border: 1px solid #ddd;
+    border-radius: 0 4px 4px 0;
     background: #fff;
     color: #333;
     cursor: pointer;
@@ -440,10 +581,88 @@ h1 {
     border-color: #999;
 }
 
+.context-arrow:hover {
+    border-color: #999;
+    background: #f5f5f5;
+}
+
 .context-btn.active {
     background: #1a1a1a;
     color: #fff;
     border-color: #1a1a1a;
+}
+
+.context-btn.active + .context-arrow {
+    border-left-color: #1a1a1a;
+}
+
+.context-menu {
+    display: none;
+    position: absolute;
+    bottom: 100%;
+    left: 0;
+    margin-bottom: 4px;
+    background: #fff;
+    border: 1px solid #ddd;
+    border-radius: 6px;
+    box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
+    padding: 8px 0;
+    min-width: 170px;
+    z-index: 100;
+}
+
+.context-menu.open {
+    display: block;
+}
+
+.context-menu label {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    padding: 6px 14px;
+    font-family: "Helvetica Neue", Arial, sans-serif;
+    font-size: 12px;
+    color: #333;
+    cursor: pointer;
+    transition: background 0.1s ease;
+}
+
+.context-menu label:hover {
+    background: #f5f5f5;
+}
+
+.context-menu input[type="checkbox"] {
+    accent-color: #1a1a1a;
+}
+
+.context-menu .season-swatch {
+    display: inline-block;
+    width: 14px;
+    height: 3px;
+    border-radius: 1px;
+}
+
+/* --- Trajectory Legend --- */
+.traj-legend {
+    display: flex;
+    justify-content: center;
+    gap: 16px;
+    padding: 8px 0 0;
+    font-family: "Helvetica Neue", Arial, sans-serif;
+    font-size: 11px;
+    color: #666;
+}
+
+.traj-legend-item {
+    display: flex;
+    align-items: center;
+    gap: 5px;
+}
+
+.traj-legend-swatch {
+    width: 18px;
+    height: 3px;
+    border-radius: 1px;
 }
 
 .traj-chart-container {
@@ -453,19 +672,6 @@ h1 {
 #traj-chart {
     width: 100%;
     display: block;
-}
-
-/* Trajectory reference date markers */
-.ref-marker {
-    cursor: pointer;
-}
-
-.ref-marker:hover line {
-    stroke-width: 2;
-}
-
-.ref-marker:hover circle {
-    r: 5;
 }
 
 /* Historical season lines */
@@ -506,6 +712,17 @@ h1 {
 
 .traj-tip.visible {
     opacity: 1;
+}
+
+/* --- Funding Footer --- */
+.funding-footer {
+    font-family: "Helvetica Neue", Arial, sans-serif;
+    font-size: 11px;
+    color: #aaa;
+    text-align: center;
+    padding: 20px 0 10px;
+    border-top: 1px solid #eee;
+    margin-top: 24px;
 }
 
 /* =============================================

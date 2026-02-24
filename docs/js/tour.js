@@ -2,39 +2,33 @@
 
 const TOUR_STEPS = [
     {
-        selector: "#date-buttons",
-        title: "Forecast Week",
-        text: "Select a forecast week. The current week and up to 4 weeks ahead are available. Click any button to change the forecast horizon.",
-        position: "bottom"
-    },
-    {
         selector: "#tab-bar",
         title: "Trend vs. Activity",
         text: "Switch between two views. Trend shows whether hospitalizations are increasing or decreasing. Activity shows the overall level of flu activity.",
         position: "bottom"
     },
     {
-        selector: "#legend",
-        title: "Color Legend",
-        text: "The color legend shows what each color on the map represents for the currently selected view.",
-        position: "bottom"
-    },
-    {
         selector: ".card-map",
         title: "US Forecast Map",
-        text: "The map shows state-level forecasts. Hover over a state to see its full probability distribution. Click a state to jump to its trajectory forecast below.",
+        text: "The map shows state-level forecasts. Hover over a state to see its full probability distribution. Click a state to jump to its trajectory forecast below. The legend, forecast week, and estimate type are all controlled within this card.",
         position: "right"
     },
     {
-        selector: "#estimate-buttons",
+        selector: ".horizon-control",
+        title: "Forecast Week",
+        text: "Select a forecast week. The current week and up to 4 weeks ahead are available. Click any button to change the forecast horizon.",
+        position: "right"
+    },
+    {
+        selector: ".estimate-control",
         title: "Estimate Selector",
         text: "Choose between the most likely forecast, or the lower and upper bounds based on the cumulative probability distribution.",
-        position: "left"
+        position: "right"
     },
     {
         selector: ".card-gauges",
         title: "National Summary",
-        text: "These gauges summarize the national forecast. The needle position reflects the probability-weighted outlook for the US overall.",
+        text: "These gauges summarize the national forecast. The needle position reflects the probability-weighted outlook. The top two most likely categories are shown below each gauge.",
         position: "left"
     },
     {
@@ -50,6 +44,13 @@ const TOUR_STEPS = [
         position: "bottom"
     }
 ];
+
+// Info text for each card's info button (keyed by data-info attribute)
+const INFO_TEXT = {
+    map: "The map shows state-level forecasts. Hover over a state to see its probability distribution. Click a state to view its trajectory forecast below. Use the buttons on the left to change the forecast week or estimate type.",
+    gauges: "These gauges summarize the national forecast. The needle position reflects the probability-weighted outlook for the US. The top two most likely categories are shown below each gauge with their probabilities.",
+    traj: "Individual forecast trajectories for a selected location. Each colored line is one possible future scenario. Click anywhere on the chart to jump to the nearest reference date. Use the controls to change location, trajectory count, horizon coloring, or add historical context."
+};
 
 let tourActive = false;
 let tourStep = 0;
@@ -82,7 +83,6 @@ function startTour() {
 function endTour() {
     tourActive = false;
 
-    // Clean up highlighted element
     if (tourHighlighted) {
         tourHighlighted.classList.remove("tour-spotlight");
         tourHighlighted = null;
@@ -121,34 +121,24 @@ function goToStep(n) {
     const target = document.querySelector(step.selector);
     if (!target) return;
 
-    // Remove previous highlight
     if (tourHighlighted) {
         tourHighlighted.classList.remove("tour-spotlight");
     }
 
-    // Scroll target into view
     target.scrollIntoView({ behavior: "smooth", block: "center" });
 
-    // Small delay to let scroll finish, then position everything
     setTimeout(() => {
-        // Highlight target
         target.classList.add("tour-spotlight");
         tourHighlighted = target;
 
-        // Position overlay cutout via clip-path
         const rect = target.getBoundingClientRect();
         const pad = 8;
-        const r = 6; // border-radius for the cutout
-
-        // Create an SVG clip path that covers everything EXCEPT the target rect
-        const vw = window.innerWidth;
-        const vh = window.innerHeight;
+        const r = 6;
         const x1 = rect.left - pad;
         const y1 = rect.top - pad;
         const x2 = rect.right + pad;
         const y2 = rect.bottom + pad;
 
-        // Polygon with a hole (outer rect CW, inner rect CCW with rounded corners approximation)
         tourOverlay.style.clipPath = `polygon(
             0% 0%, 100% 0%, 100% 100%, 0% 100%, 0% 0%,
             ${x1}px ${y1 + r}px,
@@ -162,7 +152,6 @@ function goToStep(n) {
             ${x1}px ${y1 + r}px
         )`;
 
-        // Build popup content
         const isLast = n === TOUR_STEPS.length - 1;
         const isFirst = n === 0;
 
@@ -179,7 +168,6 @@ function goToStep(n) {
             </div>
         `;
 
-        // Wire up buttons
         tourPopup.querySelector(".tour-close").addEventListener("click", endTour);
         tourPopup.querySelector(".tour-prev").addEventListener("click", () => {
             if (tourStep > 0) goToStep(tourStep - 1);
@@ -189,7 +177,6 @@ function goToStep(n) {
             else endTour();
         });
 
-        // Position popup relative to target
         positionPopup(rect, step.position);
     }, 350);
 }
@@ -198,7 +185,6 @@ function positionPopup(targetRect, preferred) {
     const popup = tourPopup;
     const gap = 14;
 
-    // Reset to measure natural size
     popup.style.left = "0px";
     popup.style.top = "0px";
     const pw = popup.offsetWidth;
@@ -222,7 +208,6 @@ function positionPopup(targetRect, preferred) {
         top = targetRect.top + targetRect.height / 2 - ph / 2;
     }
 
-    // Clamp to viewport
     if (left + pw > vw - 16) left = vw - pw - 16;
     if (left < 16) left = 16;
     if (top + ph > vh - 16) top = vh - ph - 16;
@@ -230,4 +215,48 @@ function positionPopup(targetRect, preferred) {
 
     popup.style.left = left + "px";
     popup.style.top = top + "px";
+}
+
+// --- Info Buttons ---
+
+function initInfoButtons() {
+    document.querySelectorAll(".info-btn").forEach(btn => {
+        btn.addEventListener("click", (e) => {
+            e.stopPropagation();
+            const key = btn.getAttribute("data-info");
+            const text = INFO_TEXT[key];
+            if (!text) return;
+
+            const popover = document.getElementById("info-popover");
+            const isVisible = popover.classList.contains("visible") &&
+                popover.dataset.activeKey === key;
+
+            // Toggle off if same button clicked
+            if (isVisible) {
+                popover.classList.remove("visible");
+                popover.dataset.activeKey = "";
+                return;
+            }
+
+            popover.textContent = text;
+            popover.dataset.activeKey = key;
+            popover.classList.add("visible");
+
+            // Position near the button
+            const btnRect = btn.getBoundingClientRect();
+            let left = btnRect.left - 260;
+            let top = btnRect.bottom + 8;
+
+            if (left < 16) left = 16;
+            if (top + 120 > window.innerHeight) top = btnRect.top - 120;
+
+            popover.style.left = left + "px";
+            popover.style.top = top + "px";
+        });
+    });
+
+    // Close popover when clicking elsewhere
+    document.addEventListener("click", () => {
+        document.getElementById("info-popover").classList.remove("visible");
+    });
 }

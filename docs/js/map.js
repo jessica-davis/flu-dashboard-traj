@@ -5,6 +5,7 @@ const MAP_HEIGHT = 500;
 
 let mapSvg, mapPath, stateFeatures;
 let fipsToName = {};
+let fipsToPopulation = {};
 
 function initMap(topoData) {
     mapSvg = d3.select("#us-map")
@@ -15,6 +16,7 @@ function initMap(topoData) {
 
     locationsData.forEach(loc => {
         fipsToName[loc.fips] = loc.name;
+        fipsToPopulation[loc.fips] = loc.population;
     });
 
     const projection = d3.geoAlbersUsa()
@@ -80,6 +82,68 @@ function getStateFips(d) {
     return String(d.id).padStart(2, "0");
 }
 
+// Convert a raw value to per-100k if in per capita mode
+function toDisplayValue(rawValue, fips) {
+    if (AppState.admissionsRate === "percapita") {
+        const pop = fipsToPopulation[fips];
+        if (pop && pop > 0) return rawValue / pop * 100000;
+        return null;
+    }
+    return rawValue;
+}
+
+// Get the admission display value for a FIPS code based on current estimate + rate mode
+function getAdmissionValue(fips) {
+    const refDate = AppState.currentRefDate;
+    const horizon = AppState.currentHorizon;
+    const estimate = AppState.currentEstimate;
+    const entry = dashboardData.data[refDate]?.[fips]?.[String(horizon)];
+    if (!entry) return null;
+
+    let raw;
+    if (estimate === "most_likely") raw = entry.median_value;
+    else if (estimate === "lower") raw = entry.p10_value;
+    else raw = entry.p90_value;
+
+    return toDisplayValue(raw, fips);
+}
+
+// Build a color scale for admissions values.
+// Uses the MAX across all three estimates (p90) so the scale is consistent
+// regardless of which estimate is selected.
+let _admissionsScaleCache = null;
+let _admissionsScaleKey = "";
+
+function getAdmissionsColorScale() {
+    const refDate = AppState.currentRefDate;
+    const horizon = AppState.currentHorizon;
+    const rateMode = AppState.admissionsRate;
+    const key = `${refDate}-${horizon}-${rateMode}`;
+
+    if (_admissionsScaleCache && _admissionsScaleKey === key) {
+        return _admissionsScaleCache;
+    }
+
+    // Always use p90 values (the highest) so the scale is the same
+    // for Most Likely, Lower End, and Upper End
+    let allValues = [];
+    locationsData.forEach(loc => {
+        if (loc.fips === "US") return;
+        const entry = dashboardData.data[refDate]?.[loc.fips]?.[String(horizon)];
+        if (!entry) return;
+        const raw = entry.p90_value;
+        if (raw != null) {
+            allValues.push(toDisplayValue(raw, loc.fips));
+        }
+    });
+
+    const maxVal = d3.max(allValues) || 1;
+    _admissionsScaleCache = d3.scaleSequential(d3.interpolateBlues)
+        .domain([0, maxVal]);
+    _admissionsScaleKey = key;
+    return _admissionsScaleCache;
+}
+
 function getColorForFips(fips) {
     const type = AppState.currentTab;
     const estimate = AppState.currentEstimate;
@@ -88,6 +152,13 @@ function getColorForFips(fips) {
 
     const entry = dashboardData.data[refDate]?.[fips]?.[String(horizon)];
     if (!entry) return null;
+
+    if (type === "admissions") {
+        const val = getAdmissionValue(fips);
+        if (val == null) return NO_DATA_COLOR;
+        const scale = getAdmissionsColorScale();
+        return scale(val);
+    }
 
     let category;
     if (type === "trend") {
@@ -152,6 +223,30 @@ function handleMouseEnter(event, d) {
         tooltip.append("div")
             .style("color", "#999")
             .text("No forecast data available");
+        tooltip.classed("visible", true);
+        positionTooltip(event);
+        return;
+    }
+
+    // Admissions tab: show numeric values
+    if (type === "admissions") {
+        const isPerCap = AppState.admissionsRate === "percapita";
+        const fmtVal = isPerCap ? d3.format(",.1f") : d3.format(",.0f");
+        const unit = isPerCap ? "per 100k" : "hospitalizations";
+
+        const medianDisp = toDisplayValue(entry.median_value, fips);
+        const p10Disp = toDisplayValue(entry.p10_value, fips);
+        const p90Disp = toDisplayValue(entry.p90_value, fips);
+
+        const div = tooltip.append("div")
+            .style("font-family", "Helvetica Neue, Arial, sans-serif")
+            .style("font-size", "12px")
+            .style("line-height", "1.6");
+
+        div.append("div").html(`<strong>Median:</strong> ${fmtVal(medianDisp)} ${unit}`);
+        div.append("div").html(`<strong>10th percentile:</strong> ${fmtVal(p10Disp)} ${unit}`);
+        div.append("div").html(`<strong>90th percentile:</strong> ${fmtVal(p90Disp)} ${unit}`);
+
         tooltip.classed("visible", true);
         positionTooltip(event);
         return;
@@ -246,7 +341,7 @@ function handleMouseEnter(event, d) {
 
     // X-axis labels
     const shortLabels = type === "trend"
-        ? { large_decrease: "Lg↓", decrease: "Dec", stable: "Stbl", increase: "Inc", large_increase: "Lg↑" }
+        ? { large_decrease: "Lg\u2193", decrease: "Dec", stable: "Stbl", increase: "Inc", large_increase: "Lg\u2191" }
         : { low: "Low", moderate: "Med", high: "High", very_high: "V.Hi" };
 
     order.forEach(cat => {
