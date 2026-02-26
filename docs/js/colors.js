@@ -4,7 +4,7 @@
 const TREND_COLORS = {
     large_decrease: "#75BFBD",
     decrease: "#9CD3B4",
-    stable: "#D1E5B7",
+    stable: "#D3D3CD",
     increase: "#EFDA86",
     large_increase: "#E8A56D"
 };
@@ -38,6 +38,22 @@ const ACTIVITY_LABELS = {
 
 const NO_DATA_COLOR = "#f9f9f9";
 
+// Darker variants for readable text on white backgrounds
+const TREND_TEXT_COLORS = {
+    large_decrease: "#4FA09E",
+    decrease: "#6BAD8A",
+    stable: "#999",
+    increase: "#C4A840",
+    large_increase: "#CF7A3A"
+};
+
+const ACTIVITY_TEXT_COLORS = {
+    low: "#4A9A6F",
+    moderate: "#4AA099",
+    high: "#3A7BA0",
+    very_high: "#4D6891"
+};
+
 // Gauge descriptive text
 const TREND_DESCRIPTIONS = {
     large_decrease: "Flu hospitalizations are forecast to decrease sharply",
@@ -54,9 +70,59 @@ const ACTIVITY_DESCRIPTIONS = {
     very_high: "Flu activity is at very high levels nationally"
 };
 
-// Historical season colors for "Add Context"
-const SEASON_COLORS = {
-    "2022-23": "#bbb",
-    "2023-24": "#999",
-    "2024-25": "#777"
+// Semi-transparent activity colors for chart band overlay (less fading)
+const ACTIVITY_BAND_COLORS = {
+    low: "rgba(228, 247, 238, 0.55)",
+    moderate: "rgba(156, 216, 211, 0.45)",
+    high: "rgba(75, 154, 193, 0.35)",
+    very_high: "rgba(77, 104, 145, 0.35)"
 };
+
+// Historical season colors for "Add Context" (more distinct)
+const SEASON_COLORS = {
+    "2022-23": "#E07B54",
+    "2023-24": "#7B68AE",
+    "2024-25": "#4A9A6F"
+};
+
+// Classify a raw hospitalization value into an activity level using thresholds
+function classifyActivity(value, fips) {
+    if (typeof activityThresholds === "undefined" || !activityThresholds) return null;
+    const th = activityThresholds[fips];
+    if (!th || value == null) return null;
+    if (value >= th.very_high) return "very_high";
+    if (value >= th.high) return "high";
+    if (value >= th.moderate) return "moderate";
+    return "low";
+}
+
+// Compute activity probability distribution from trajectory values at a given horizon
+function computeActivityProbsFromTrajs(trajFileData, refDate, horizon, fips) {
+    if (typeof activityThresholds === "undefined" || !activityThresholds) return null;
+    const th = activityThresholds[fips];
+    if (!th || !trajFileData?.data?.[refDate]) return null;
+
+    const rdData = trajFileData.data[refDate];
+    const valueIdx = horizon; // horizon h maps to dates[h] / values[h]
+    const trajs = rdData.trajectories;
+    const counts = { low: 0, moderate: 0, high: 0, very_high: 0 };
+    let total = 0;
+
+    trajs.forEach(t => {
+        const val = t.values[valueIdx];
+        if (val == null) return;
+        total++;
+        if (val >= th.very_high) counts.very_high++;
+        else if (val >= th.high) counts.high++;
+        else if (val >= th.moderate) counts.moderate++;
+        else counts.low++;
+    });
+
+    if (total === 0) return null;
+    return {
+        low: counts.low / total,
+        moderate: counts.moderate / total,
+        high: counts.high / total,
+        very_high: counts.very_high / total
+    };
+}

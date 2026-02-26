@@ -150,6 +150,8 @@ h1 {
 .card-map {
     flex: 1;
     min-width: 0;
+    display: flex;
+    flex-direction: column;
 }
 
 .card-gauges {
@@ -160,11 +162,9 @@ h1 {
     padding: 20px;
 }
 
-/* --- Legend (inside map card) --- */
+/* --- Legend (left panel, below trend summary text) --- */
 .legend-container {
-    display: flex;
-    justify-content: flex-start;
-    margin: 0;
+    margin-top: 6px;
 }
 
 .legend-container svg {
@@ -183,6 +183,7 @@ h1 {
     flex-direction: column;
     gap: 10px;
     flex-shrink: 0;
+    width: 130px;
 }
 
 .map-container {
@@ -300,6 +301,32 @@ h1 {
     margin-top: 1px;
 }
 
+/* --- Horizontal horizon control (bottom of map) --- */
+.map-bottom-controls {
+    margin-top: auto;
+    padding-top: 8px;
+}
+
+.map-bottom-controls .control-title {
+    margin-bottom: 4px;
+}
+
+.horizon-control.horizontal {
+    flex-direction: row;
+    border-radius: 6px;
+}
+
+.horizon-control.horizontal .seg-btn {
+    border-bottom: none;
+    border-right: 1px solid #e0e0e0;
+    text-align: center;
+    flex: 1;
+}
+
+.horizon-control.horizontal .seg-btn:last-child {
+    border-right: none;
+}
+
 /* --- Estimate Control (light/secondary style) --- */
 .estimate-control {
     border: 1px solid #ccc;
@@ -313,6 +340,15 @@ h1 {
     background: #fff;
     color: #666;
     border-bottom: 1px solid #e8e8e8;
+    line-height: 1.3;
+}
+
+.estimate-desc {
+    display: block;
+    font-size: 8px;
+    font-weight: 400;
+    color: #aaa;
+    margin-top: 1px;
 }
 
 .estimate-control .seg-btn:last-child {
@@ -375,9 +411,26 @@ h1 {
     border-bottom: 1px solid #eee;
 }
 
+.forecast-context-title {
+    font-family: "Helvetica Neue", Arial, sans-serif;
+    font-size: 13px;
+    font-weight: 700;
+    color: #1a1a1a;
+    margin: 0 0 2px;
+    line-height: 1.3;
+}
+
+.forecast-context-title .forecast-week-range {
+    display: block;
+    font-size: 11px;
+    font-weight: 500;
+    color: #888;
+    margin-top: 1px;
+}
+
 .overview-primary {
     font-size: 12px;
-    margin-bottom: 6px;
+    margin-bottom: 0;
     color: #333;
 }
 
@@ -385,12 +438,23 @@ h1 {
     color: #1a1a1a;
 }
 
+.overview-line {
+    display: block;
+    line-height: 1.6;
+}
+
+.overview-pct {
+    font-size: 11px;
+    color: #999;
+    font-weight: 400;
+}
+
 .map-trend-summary {
     font-family: "Helvetica Neue", Arial, sans-serif;
-    font-size: 12px;
+    font-size: 11px;
     color: #555;
-    text-align: center;
-    padding: 4px 12px 6px;
+    text-align: left;
+    padding: 6px 0 0;
     line-height: 1.4;
 }
 
@@ -406,19 +470,18 @@ h1 {
     align-items: center;
 }
 
-.trend-arrow-wrapper {
-    text-align: center;
+/* --- Bar Chart & Admissions Distribution --- */
+.bar-chart-container {
+    margin-top: 4px;
 }
 
-.trend-arrow-wrapper svg {
+.bar-chart-container svg,
+.admissions-dist-container svg {
     display: block;
-    margin: 0 auto;
 }
 
-.trend-arrow-label {
-    font-family: "Helvetica Neue", Arial, sans-serif;
-    text-align: center;
-    margin-bottom: 2px;
+.admissions-dist-container {
+    margin-top: 4px;
 }
 
 .gauge-wrapper {
@@ -446,19 +509,6 @@ h1 {
     line-height: 1.3;
 }
 
-.prob-labels {
-    display: flex;
-    justify-content: center;
-    gap: 14px;
-    margin-top: 0;
-    min-height: 20px;
-}
-
-.prob-label {
-    font-family: "Helvetica Neue", Arial, sans-serif;
-    line-height: 1.3;
-    white-space: nowrap;
-}
 
 /* --- Info Buttons --- */
 .info-btn {
@@ -528,7 +578,7 @@ h1 {
     z-index: 1000;
     opacity: 0;
     transition: opacity 0.15s ease;
-    max-width: 280px;
+    max-width: 340px;
 }
 
 .tooltip.visible {
@@ -582,7 +632,13 @@ h1 {
     justify-content: space-between;
     flex-wrap: wrap;
     gap: 8px;
-    margin-bottom: 12px;
+    margin-bottom: 8px;
+}
+
+.traj-body {
+    display: flex;
+    gap: 0;
+    align-items: stretch;
 }
 
 .section-divider {
@@ -607,124 +663,282 @@ h1 {
 
 .traj-controls {
     display: flex;
-    gap: 12px;
-    align-items: center;
+    gap: 20px;
+    align-items: flex-end;
     flex-wrap: wrap;
 }
 
 .traj-label {
     font-family: "Helvetica Neue", Arial, sans-serif;
-    font-size: 11px;
+    font-size: 13px;
+    font-weight: 500;
     color: #666;
     display: flex;
     flex-direction: column;
-    gap: 2px;
+    gap: 3px;
+}
+
+.traj-label-location {
+    font-size: 14px;
 }
 
 .traj-select {
     font-family: "Helvetica Neue", Arial, sans-serif;
-    font-size: 12px;
-    padding: 4px 8px;
+    font-size: 14px;
+    padding: 5px 10px;
     border: 1px solid #ddd;
     border-radius: 4px;
     background: #fff;
     color: #333;
 }
 
-.context-dropdown {
-    position: relative;
-    display: inline-block;
+.traj-select-location {
+    font-size: 15px;
+    padding: 6px 12px;
 }
 
-.context-btn {
+/* --- Trajectory Slider --- */
+.traj-slider-group {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+}
+
+.traj-slider {
+    -webkit-appearance: none;
+    appearance: none;
+    width: 100px;
+    height: 3px;
+    background: #ddd;
+    border-radius: 2px;
+    outline: none;
+    cursor: pointer;
+}
+
+.traj-slider::-webkit-slider-thumb {
+    -webkit-appearance: none;
+    appearance: none;
+    width: 14px;
+    height: 14px;
+    background: #1a1a1a;
+    border-radius: 50%;
+    cursor: pointer;
+}
+
+.traj-slider::-moz-range-thumb {
+    width: 14px;
+    height: 14px;
+    background: #1a1a1a;
+    border-radius: 50%;
+    border: none;
+    cursor: pointer;
+}
+
+.traj-slider-value {
+    font-family: "Helvetica Neue", Arial, sans-serif;
+    font-size: 13px;
+    font-weight: 600;
+    color: #333;
+    min-width: 28px;
+}
+
+/* --- Context Panel (right side of trajectory chart) --- */
+.traj-context-panel {
+    width: 220px;
+    flex-shrink: 0;
+    border-left: 1px solid #eee;
+    padding-left: 16px;
+    margin-left: 8px;
+}
+
+.context-panel-title {
+    font-family: "Helvetica Neue", Arial, sans-serif;
+    font-size: 13px;
+    font-weight: 700;
+    color: #1a1a1a;
+    margin: 0 0 10px;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+}
+
+.context-section {
+    margin-bottom: 4px;
+}
+
+.context-section-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    width: 100%;
+    padding: 8px 0;
+    border: none;
+    background: none;
+    cursor: pointer;
     font-family: "Helvetica Neue", Arial, sans-serif;
     font-size: 12px;
     font-weight: 600;
-    padding: 6px 12px;
-    border: 1px solid #ddd;
-    border-right: none;
-    border-radius: 4px 0 0 4px;
-    background: #fff;
-    color: #333;
-    cursor: pointer;
-    transition: all 0.15s ease;
+    color: #555;
+    border-bottom: 1px solid #eee;
+    transition: color 0.12s ease;
 }
 
-.context-arrow {
-    font-family: "Helvetica Neue", Arial, sans-serif;
+.context-section-header:hover {
+    color: #1a1a1a;
+}
+
+.context-section-header.active {
+    color: #1a1a1a;
+}
+
+.context-chevron {
     font-size: 10px;
-    padding: 6px 8px;
-    border: 1px solid #ddd;
-    border-radius: 0 4px 4px 0;
+    color: #999;
+    transition: transform 0.2s ease;
+}
+
+.context-section-header.active .context-chevron {
+    transform: rotate(180deg);
+}
+
+.context-section-body {
+    display: none;
+    padding: 8px 0 4px;
+}
+
+.context-section-body.open {
+    display: block;
+}
+
+/* Season toggle buttons */
+.ctx-season-btn {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    width: 100%;
+    padding: 5px 8px;
+    border: 1px solid #eee;
+    border-radius: 4px;
     background: #fff;
-    color: #333;
     cursor: pointer;
-    transition: all 0.15s ease;
+    font-family: "Helvetica Neue", Arial, sans-serif;
+    font-size: 12px;
+    color: #666;
+    margin-bottom: 4px;
+    transition: all 0.12s ease;
 }
 
-.context-btn:hover {
-    border-color: #999;
+.ctx-season-btn:hover {
+    border-color: #ccc;
 }
 
-.context-arrow:hover {
-    border-color: #999;
+.ctx-season-btn.active {
     background: #f5f5f5;
+    border-color: #bbb;
+    color: #1a1a1a;
+    font-weight: 600;
 }
 
-.context-btn.active {
+.ctx-season-swatch {
+    width: 16px;
+    height: 3px;
+    border-radius: 1px;
+    flex-shrink: 0;
+}
+
+/* Activity level items in context panel */
+.ctx-activity-item {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    padding: 4px 0;
+    font-family: "Helvetica Neue", Arial, sans-serif;
+    font-size: 12px;
+    color: #555;
+}
+
+.ctx-activity-swatch {
+    width: 16px;
+    height: 12px;
+    border-radius: 2px;
+    flex-shrink: 0;
+    opacity: 0.5;
+}
+
+/* Horizon buttons in trends section */
+.ctx-horizon-group {
+    display: flex;
+    gap: 4px;
+    margin-bottom: 10px;
+    flex-wrap: wrap;
+}
+
+.ctx-horizon-btn {
+    font-family: "Helvetica Neue", Arial, sans-serif;
+    font-size: 11px;
+    font-weight: 600;
+    padding: 4px 10px;
+    border: 1px solid #ddd;
+    border-radius: 4px;
+    background: #fff;
+    color: #666;
+    cursor: pointer;
+    transition: all 0.12s ease;
+}
+
+.ctx-horizon-btn:hover {
+    border-color: #999;
+}
+
+.ctx-horizon-btn.active {
     background: #1a1a1a;
     color: #fff;
     border-color: #1a1a1a;
 }
 
-.context-btn.active + .context-arrow {
-    border-left-color: #1a1a1a;
+/* PI toggle buttons (top bar) */
+.traj-pi-controls {
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
 }
 
-.context-menu {
-    display: none;
-    position: absolute;
-    bottom: 100%;
-    left: 0;
-    margin-bottom: 4px;
-    background: #fff;
-    border: 1px solid #ddd;
-    border-radius: 6px;
-    box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
-    padding: 8px 0;
-    min-width: 170px;
-    z-index: 100;
+.traj-pi-buttons {
+    display: flex;
+    gap: 6px;
+    margin-top: 4px;
 }
 
-.context-menu.open {
-    display: block;
-}
-
-.context-menu label {
+.traj-pi-btn {
     display: flex;
     align-items: center;
-    gap: 8px;
-    padding: 6px 14px;
+    gap: 5px;
+    padding: 3px 10px;
+    border: 1px solid #ddd;
+    border-radius: 4px;
+    background: #fff;
+    cursor: pointer;
     font-family: "Helvetica Neue", Arial, sans-serif;
     font-size: 12px;
-    color: #333;
-    cursor: pointer;
-    transition: background 0.1s ease;
+    color: #666;
+    transition: all 0.12s ease;
 }
 
-.context-menu label:hover {
-    background: #f5f5f5;
+.traj-pi-btn:hover {
+    border-color: #aaa;
 }
 
-.context-menu input[type="checkbox"] {
-    accent-color: #1a1a1a;
+.traj-pi-btn.active {
+    background: #f0f6fa;
+    border-color: #6faed0;
+    color: #1a1a1a;
+    font-weight: 600;
 }
 
-.context-menu .season-swatch {
-    display: inline-block;
+.traj-pi-swatch {
     width: 14px;
-    height: 3px;
-    border-radius: 1px;
+    height: 10px;
+    border-radius: 2px;
+    flex-shrink: 0;
 }
 
 /* --- Trajectory Legend --- */
@@ -734,7 +948,7 @@ h1 {
     gap: 16px;
     padding: 8px 0 0;
     font-family: "Helvetica Neue", Arial, sans-serif;
-    font-size: 11px;
+    font-size: 13px;
     color: #666;
 }
 
@@ -752,6 +966,8 @@ h1 {
 
 .traj-chart-container {
     position: relative;
+    flex: 1;
+    min-width: 0;
 }
 
 #traj-chart {
@@ -759,21 +975,27 @@ h1 {
     display: block;
 }
 
-/* Historical season lines */
-.season-line {
-    fill: none;
-    stroke-width: 1.5;
-    opacity: 0.4;
+/* Trajectory tooltip rows */
+.traj-tip-header {
+    font-weight: 700;
+    margin-bottom: 4px;
+    padding-bottom: 4px;
+    border-bottom: 1px solid #eee;
+    color: #1a1a1a;
 }
 
-/* Donut chart inside trajectory plot */
-.donut-label {
-    font-family: "Helvetica Neue", Arial, sans-serif;
-    font-size: 10px;
-    fill: #555;
-    font-weight: 600;
-    text-anchor: middle;
-    dominant-baseline: middle;
+.traj-tip-row {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    padding: 2px 0;
+}
+
+.traj-tip-swatch {
+    width: 12px;
+    height: 3px;
+    border-radius: 1px;
+    flex-shrink: 0;
 }
 
 /* Trajectory chart tooltip */

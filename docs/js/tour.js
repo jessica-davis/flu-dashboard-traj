@@ -4,52 +4,58 @@ const TOUR_STEPS = [
     {
         selector: "#tab-bar",
         title: "Trend vs. Activity",
-        text: "Switch between two views. Trend shows whether hospitalizations are increasing or decreasing. Activity shows the overall level of flu activity.",
+        text: "Switch between three views. <strong>Trend</strong> shows whether hospitalizations are increasing or decreasing. <strong>Activity</strong> shows the overall flu activity level using hospitalization thresholds. <strong>Admissions</strong> shows the raw hospitalization count forecast.",
         position: "bottom"
     },
     {
         selector: ".card-map",
         title: "US Forecast Map",
-        text: "The map shows state-level forecasts. Hover over a state to see its full probability distribution. Click a state to jump to its trajectory forecast below. The legend, forecast week, and estimate type are all controlled within this card.",
+        text: "The map shows state-level forecasts colored by category. Hover over a state to see its probability distribution computed from model trajectories. Click a state to jump to its trajectory forecast below.",
         position: "right"
     },
     {
         selector: ".horizon-control",
         title: "Forecast Week",
-        text: "Select a forecast week. The current week and up to 4 weeks ahead are available. Click any button to change the forecast horizon.",
+        text: "Select a forecast week (Wk 1\u2013Wk 4). Wk 1 is the current week and Wk 4 is three weeks ahead. The date range for each week is shown on the button.",
         position: "right"
     },
     {
         selector: ".estimate-control",
-        title: "Estimate Selector",
-        text: "Choose between the most likely forecast, or the lower and upper bounds based on the cumulative probability distribution.",
+        title: "Uncertainty Estimates",
+        text: "Choose between the <strong>Most Likely</strong> (median) forecast, or the <strong>Lower End</strong> (10th percentile) and <strong>Upper End</strong> (90th percentile) to see the range of possible outcomes.",
         position: "right"
     },
     {
         selector: ".card-gauges",
         title: "National Summary",
-        text: "These gauges summarize the national forecast. The needle position reflects the probability-weighted outlook. The top two most likely categories are shown below each gauge.",
+        text: "The gauge shows the probability-weighted national outlook. The bar chart below shows the full uncertainty distribution across categories. The text summarizes activity level, estimated admissions, and trend direction.",
         position: "left"
     },
     {
         selector: "#trajectory-section",
         title: "Trajectory Forecasts",
-        text: "Individual forecast trajectories for a selected location. Each colored line is one possible future scenario. Click anywhere on the chart to jump to the nearest reference date.",
+        text: "Individual model simulations for a selected location. Each line represents one possible future. Use the <strong>Prediction Intervals</strong> buttons to overlay 50%, 90%, or 95% PI bands. Set trajectories to 0 to see PI bands alone. Click the chart to change the reference date.",
         position: "top"
     },
     {
         selector: ".traj-controls",
         title: "Trajectory Controls",
-        text: "Change the location, number of visible trajectories, horizon coloring, or toggle historical season curves for context.",
+        text: "Select a <strong>Location</strong>, adjust the number of <strong>Trajectories</strong> shown (0\u2013200), and toggle <strong>Prediction Intervals</strong> (50%, 90%, 95% PI).",
         position: "bottom"
+    },
+    {
+        selector: ".traj-context-panel",
+        title: "Add Context Panel",
+        text: "Three collapsible sections: <strong>Compare to Previous Seasons</strong> overlays historical curves. <strong>Activity Levels</strong> shows colored threshold bands on the chart. <strong>Trend Forecasts</strong> colors trajectories by the selected horizon\u2019s trend category.",
+        position: "left"
     }
 ];
 
 // Info text for each card's info button (keyed by data-info attribute)
 const INFO_TEXT = {
-    map: "The map shows state-level forecasts. Hover over a state to see its probability distribution. Click a state to view its trajectory forecast below. Use the buttons on the left to change the forecast week or estimate type.",
-    gauges: "These gauges summarize the national forecast. The needle position reflects the probability-weighted outlook for the US. The top two most likely categories are shown below each gauge with their probabilities.",
-    traj: "Individual forecast trajectories for a selected location. Each colored line is one possible future scenario. Click anywhere on the chart to jump to the nearest reference date. Use the controls to change location, trajectory count, horizon coloring, or add historical context."
+    map: "The map shows state-level forecasts colored by trend, activity level, or admissions. Activity levels are classified using hospitalization thresholds (Low, Medium, High, Very High). Hover over a state to see the full probability distribution computed from model trajectories. Click a state to view its trajectory forecast below. Use the Forecast Week buttons to select Wk 1\u2013Wk 4 and the Uncertainty selector to view the most likely, lower, or upper estimate.",
+    gauges: "The gauge shows the probability-weighted national outlook. The bar chart displays the full uncertainty distribution across categories. The narrative text summarizes the current activity level, estimated weekly admissions, and the forecasted trend direction with probability.",
+    traj: "Individual model simulation trajectories for a selected location. Each line represents one possible future scenario from the ensemble model. Use the slider to adjust the number of trajectories (0\u2013200) or set to 0 to view only prediction intervals. Toggle 50%, 90%, or 95% prediction interval bands using the buttons at the top. The \u201cAdd Context\u201d panel on the right lets you compare to previous seasons, overlay activity level threshold bands, or color trajectories by trend forecast at a selected horizon. Click anywhere on the chart to change the reference date."
 };
 
 let tourActive = false;

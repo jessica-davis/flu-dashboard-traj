@@ -1,11 +1,27 @@
 // US Choropleth Map with rich tooltip bar plots
 
 const MAP_WIDTH = 800;
-const MAP_HEIGHT = 500;
+const MAP_HEIGHT = 480;
 
 let mapSvg, mapPath, stateFeatures;
 let fipsToName = {};
 let fipsToPopulation = {};
+
+// Cache for trajectory data loaded on demand (for activity prob computation)
+let _trajCache = {};
+let _hoverFips = null;
+
+async function getTrajDataCached(fips) {
+    if (_trajCache[fips] !== undefined) return _trajCache[fips];
+    try {
+        const data = await d3.json(`data/trajectories/${fips}.json`);
+        _trajCache[fips] = data;
+        return data;
+    } catch {
+        _trajCache[fips] = null;
+        return null;
+    }
+}
 
 function initMap(topoData) {
     mapSvg = d3.select("#us-map")
@@ -20,7 +36,7 @@ function initMap(topoData) {
     });
 
     const projection = d3.geoAlbersUsa()
-        .fitSize([MAP_WIDTH - 40, MAP_HEIGHT - 20], {
+        .fitSize([MAP_WIDTH - 20, MAP_HEIGHT - 10], {
             type: "FeatureCollection",
             features: stateFeatures
         });
@@ -64,8 +80,9 @@ function initMap(topoData) {
 }
 
 function addDCInset() {
-    const insetX = MAP_WIDTH - 55;
-    const insetY = MAP_HEIGHT - 45;
+    // Position near the VA/MD coast on AlbersUSA projection
+    const insetX = 700;
+    const insetY = 235;
     const boxSize = 16;
 
     const g = mapSvg.append("g")
@@ -89,9 +106,11 @@ function addDCInset() {
 
     g.append("text")
         .attr("class", "dc-inset-label")
-        .attr("x", boxSize / 2)
-        .attr("y", boxSize + 11)
-        .attr("text-anchor", "middle")
+        .attr("x", boxSize + 4)
+        .attr("y", boxSize / 2 + 4)
+        .attr("text-anchor", "start")
+        .attr("font-size", "9px")
+        .attr("fill", "#666")
         .text("DC");
 }
 
@@ -183,9 +202,12 @@ function getColorForFips(fips) {
             : estimate === "lower" ? entry.trend_lower
                 : entry.trend_upper;
     } else {
-        category = estimate === "most_likely" ? entry.activity_most_likely
-            : estimate === "lower" ? entry.activity_lower
-                : entry.activity_upper;
+        // Classify using activity thresholds from the file
+        let raw;
+        if (estimate === "most_likely") raw = entry.median_value;
+        else if (estimate === "lower") raw = entry.p10_value;
+        else raw = entry.p90_value;
+        category = classifyActivity(raw, fips);
     }
 
     const colorMap = type === "trend" ? TREND_COLORS : ACTIVITY_COLORS;
@@ -221,8 +243,9 @@ function handleStateClick(event, d) {
 
 // --- Rich Tooltip with Bar Plot PMF ---
 
-function handleMouseEnter(event, d) {
+async function handleMouseEnter(event, d) {
     const fips = getStateFips(d);
+    _hoverFips = fips;
     const name = fipsToName[fips] || `State ${fips}`;
     const type = AppState.currentTab;
     const refDate = AppState.currentRefDate;
@@ -245,31 +268,25 @@ function handleMouseEnter(event, d) {
         return;
     }
 
-    // Admissions tab: show numeric values
+    // Admissions tab: time series chart with forecast PI
     if (type === "admissions") {
-        const isPerCap = AppState.admissionsRate === "percapita";
-        const fmtVal = isPerCap ? d3.format(",.1f") : d3.format(",.0f");
-        const unit = isPerCap ? "per 100k" : "hospitalizations";
-
-        const medianDisp = toDisplayValue(entry.median_value, fips);
-        const p10Disp = toDisplayValue(entry.p10_value, fips);
-        const p90Disp = toDisplayValue(entry.p90_value, fips);
-
-        const div = tooltip.append("div")
-            .style("font-family", "Helvetica Neue, Arial, sans-serif")
-            .style("font-size", "12px")
-            .style("line-height", "1.6");
-
-        div.append("div").html(`<strong>Median:</strong> ${fmtVal(medianDisp)} ${unit}`);
-        div.append("div").html(`<strong>10th percentile:</strong> ${fmtVal(p10Disp)} ${unit}`);
-        div.append("div").html(`<strong>90th percentile:</strong> ${fmtVal(p90Disp)} ${unit}`);
-
+        drawAdmissionsTooltip(tooltip, fips, refDate, horizon);
         tooltip.classed("visible", true);
         positionTooltip(event);
         return;
     }
 
-    const probs = type === "trend" ? entry.trend_probs : entry.activity_probs;
+    // For activity tab, compute probs from trajectories using correct thresholds
+    let probs;
+    if (type === "activity") {
+        const trajFileData = await getTrajDataCached(fips);
+        if (_hoverFips !== fips) return; // Mouse moved away during load
+        probs = (trajFileData ? computeActivityProbsFromTrajs(trajFileData, refDate, horizon, fips) : null)
+            || entry.activity_probs;
+    } else {
+        probs = entry.trend_probs;
+    }
+
     const order = type === "trend" ? TREND_ORDER : ACTIVITY_ORDER;
     const colors = type === "trend" ? TREND_COLORS : ACTIVITY_COLORS;
     const labels = type === "trend" ? TREND_LABELS : ACTIVITY_LABELS;
@@ -279,8 +296,12 @@ function handleMouseEnter(event, d) {
         selectedCat = estimate === "most_likely" ? entry.trend_most_likely
             : estimate === "lower" ? entry.trend_lower : entry.trend_upper;
     } else {
-        selectedCat = estimate === "most_likely" ? entry.activity_most_likely
-            : estimate === "lower" ? entry.activity_lower : entry.activity_upper;
+        // Use threshold-based classification
+        let raw;
+        if (estimate === "most_likely") raw = entry.median_value;
+        else if (estimate === "lower") raw = entry.p10_value;
+        else raw = entry.p90_value;
+        selectedCat = classifyActivity(raw, fips) || entry.activity_most_likely;
     }
 
     // Build bar plot SVG
@@ -411,4 +432,260 @@ function positionTooltip(event) {
     d3.select("#tooltip")
         .style("left", left + "px")
         .style("top", top + "px");
+}
+
+// --- Admissions tooltip: time series with forecast PI bands ---
+
+function drawAdmissionsTooltip(tooltip, fips, refDate, horizon) {
+    const isPerCap = AppState.admissionsRate === "percapita";
+    const pop = fipsToPopulation[fips];
+    const toVal = v => (isPerCap && pop) ? v / pop * 100000 : v;
+
+    // Gather forecast data for horizons 0-3 only
+    const forecast = [];
+    for (let h = 0; h <= 3; h++) {
+        const e = dashboardData.data[refDate]?.[fips]?.[String(h)];
+        if (e) {
+            const med = toVal(e.median_value);
+            const lo = toVal(e.p10_value);
+            const hi = toVal(e.p90_value);
+            // Approximate 50% PI by shrinking toward median (~60% of 80% PI width)
+            const p25 = med - (med - lo) * 0.6;
+            const p75 = med + (hi - med) * 0.6;
+            forecast.push({
+                date: new Date(e.forecast_date + "T00:00:00"),
+                median: med,
+                p10: lo, p90: hi,
+                p25: p25, p75: p75
+            });
+        }
+    }
+
+    // Last forecast date
+    const lastForecastDate = forecast.length > 0
+        ? forecast[forecast.length - 1].date
+        : new Date(refDate + "T00:00:00");
+
+    // Observed data: in-sample (before ref date) + out-of-sample (up to last forecast week)
+    const refDt = new Date(refDate + "T00:00:00");
+    const allObs = (targetDataAll?.[fips] || [])
+        .map(d => ({ date: new Date(d.date + "T00:00:00"), value: toVal(d.value) }));
+
+    const inSample = allObs.filter(d => d.date < refDt).slice(-8);
+    const outSample = allObs.filter(d => d.date >= refDt && d.date <= lastForecastDate);
+
+    if (inSample.length === 0 && forecast.length === 0) {
+        tooltip.append("div")
+            .style("color", "#999")
+            .text("No data available");
+        return;
+    }
+
+    // Chart dimensions
+    const chartW = 310;
+    const chartH = 175;
+    const margin = { top: 12, right: 12, bottom: 36, left: 42 };
+    const innerW = chartW - margin.left - margin.right;
+    const innerH = chartH - margin.top - margin.bottom;
+
+    // Compute domains
+    const allDates = [
+        ...inSample.map(d => d.date),
+        ...outSample.map(d => d.date),
+        ...forecast.map(d => d.date)
+    ];
+    const allValues = [
+        ...inSample.map(d => d.value),
+        ...outSample.map(d => d.value),
+        ...forecast.map(d => d.p90),
+        0
+    ];
+
+    const x = d3.scaleTime()
+        .domain(d3.extent(allDates))
+        .range([0, innerW]);
+
+    const y = d3.scaleLinear()
+        .domain([0, d3.max(allValues) * 1.1])
+        .range([innerH, 0])
+        .nice();
+
+    const svg = tooltip.append("div")
+        .attr("class", "tooltip-chart")
+        .append("svg")
+        .attr("width", chartW)
+        .attr("height", chartH);
+
+    // Clip path to prevent PI bands from overflowing
+    svg.append("defs").append("clipPath")
+        .attr("id", "tt-clip")
+        .append("rect")
+        .attr("width", innerW)
+        .attr("height", innerH);
+
+    const g = svg.append("g")
+        .attr("transform", `translate(${margin.left},${margin.top})`);
+
+    const clipped = g.append("g")
+        .attr("clip-path", "url(#tt-clip)");
+
+    // Grid lines
+    const yTicks = y.ticks(4);
+    yTicks.forEach(v => {
+        g.append("line")
+            .attr("x1", 0).attr("y1", y(v))
+            .attr("x2", innerW).attr("y2", y(v))
+            .attr("stroke", "#eee")
+            .attr("stroke-width", 0.5);
+    });
+
+    // 80% PI band (outer, lighter)
+    if (forecast.length > 0) {
+        const area80 = d3.area()
+            .x(d => x(d.date))
+            .y0(d => y(d.p10))
+            .y1(d => y(d.p90));
+        clipped.append("path")
+            .datum(forecast)
+            .attr("d", area80)
+            .attr("fill", "#b0d4e8")
+            .attr("opacity", 0.3);
+    }
+
+    // 50% PI band (inner, darker)
+    if (forecast.length > 0) {
+        const area50 = d3.area()
+            .x(d => x(d.date))
+            .y0(d => y(d.p25))
+            .y1(d => y(d.p75));
+        clipped.append("path")
+            .datum(forecast)
+            .attr("d", area50)
+            .attr("fill", "#6faed0")
+            .attr("opacity", 0.35);
+    }
+
+    // In-sample observed line + dots (solid black)
+    if (inSample.length > 1) {
+        clipped.append("path")
+            .datum(inSample)
+            .attr("d", d3.line().x(d => x(d.date)).y(d => y(d.value)))
+            .attr("fill", "none")
+            .attr("stroke", "#1a1a1a")
+            .attr("stroke-width", 2);
+    }
+    inSample.forEach(d => {
+        clipped.append("circle")
+            .attr("cx", x(d.date)).attr("cy", y(d.value))
+            .attr("r", 3).attr("fill", "#1a1a1a");
+    });
+
+    // Out-of-sample observed (white dot with black stroke)
+    if (outSample.length > 0) {
+        const obsLine = [...inSample.slice(-1), ...outSample];
+        if (obsLine.length > 1) {
+            clipped.append("path")
+                .datum(obsLine)
+                .attr("d", d3.line().x(d => x(d.date)).y(d => y(d.value)))
+                .attr("fill", "none")
+                .attr("stroke", "#1a1a1a")
+                .attr("stroke-width", 1.5)
+                .attr("stroke-dasharray", "3,2");
+        }
+        outSample.forEach(d => {
+            clipped.append("circle")
+                .attr("cx", x(d.date)).attr("cy", y(d.value))
+                .attr("r", 3)
+                .attr("fill", "#fff")
+                .attr("stroke", "#1a1a1a")
+                .attr("stroke-width", 1.5);
+        });
+    }
+
+    // Forecast median line + dots
+    if (forecast.length > 0) {
+        clipped.append("path")
+            .datum(forecast)
+            .attr("d", d3.line().x(d => x(d.date)).y(d => y(d.median)))
+            .attr("fill", "none")
+            .attr("stroke", "#4682B4")
+            .attr("stroke-width", 2);
+        forecast.forEach(d => {
+            clipped.append("circle")
+                .attr("cx", x(d.date)).attr("cy", y(d.median))
+                .attr("r", 3).attr("fill", "#4682B4");
+        });
+    }
+
+    // Vertical dashed line at selected forecast week
+    const selectedEntry = dashboardData.data[refDate]?.[fips]?.[String(horizon)];
+    if (selectedEntry) {
+        const selDate = new Date(selectedEntry.forecast_date + "T00:00:00");
+        g.append("line")
+            .attr("x1", x(selDate)).attr("y1", 0)
+            .attr("x2", x(selDate)).attr("y2", innerH)
+            .attr("stroke", "#999")
+            .attr("stroke-width", 1)
+            .attr("stroke-dasharray", "3,2");
+    }
+
+    // X-axis
+    g.append("g")
+        .attr("transform", `translate(0,${innerH})`)
+        .call(d3.axisBottom(x).ticks(4).tickFormat(d3.timeFormat("%b %d")))
+        .selectAll("text")
+        .attr("font-family", "Helvetica Neue, Arial, sans-serif")
+        .attr("font-size", "8px")
+        .attr("fill", "#999");
+
+    g.selectAll(".domain").attr("stroke", "#ddd");
+    g.selectAll(".tick line").attr("stroke", "#ddd");
+
+    // Y-axis labels
+    const fmtY = isPerCap ? d3.format(",.1f") : (v => {
+        if (v >= 1000) return d3.format(",.0f")(v / 1000) + "k";
+        return d3.format(",.0f")(v);
+    });
+    yTicks.forEach(v => {
+        g.append("text")
+            .attr("x", -4).attr("y", y(v))
+            .attr("text-anchor", "end")
+            .attr("dominant-baseline", "middle")
+            .attr("font-size", "8px")
+            .attr("font-family", "Helvetica Neue, Arial, sans-serif")
+            .attr("fill", "#999")
+            .text(fmtY(v));
+    });
+
+    // Legend
+    const legendY = chartH - 6;
+    const items = [
+        { label: "Observed", type: "line", color: "#1a1a1a" },
+        { label: "Forecast", type: "line", color: "#4682B4" },
+        { label: "50% PI", type: "rect", color: "#6faed0", opacity: 0.5 },
+        { label: "95% PI", type: "rect", color: "#b0d4e8", opacity: 0.5 }
+    ];
+    let lx = margin.left;
+    items.forEach(item => {
+        if (item.type === "rect") {
+            svg.append("rect")
+                .attr("x", lx).attr("y", legendY - 4)
+                .attr("width", 12).attr("height", 8)
+                .attr("fill", item.color).attr("opacity", item.opacity)
+                .attr("rx", 1);
+        } else {
+            svg.append("line")
+                .attr("x1", lx).attr("y1", legendY)
+                .attr("x2", lx + 12).attr("y2", legendY)
+                .attr("stroke", item.color).attr("stroke-width", 2);
+        }
+        svg.append("text")
+            .attr("x", lx + 15).attr("y", legendY + 1)
+            .attr("dominant-baseline", "central")
+            .attr("font-family", "Helvetica Neue, Arial, sans-serif")
+            .attr("font-size", "7px")
+            .attr("fill", "#666")
+            .text(item.label);
+        lx += 15 + item.label.length * 4.5 + 8;
+    });
 }

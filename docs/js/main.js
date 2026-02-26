@@ -4,7 +4,7 @@ const AppState = {
     currentTab: "trend",
     currentEstimate: "most_likely",
     currentRefDate: null,
-    currentHorizon: 1,
+    currentHorizon: 0,
     selectedState: "US",
     admissionsRate: "total" // "total" or "percapita"
 };
@@ -12,18 +12,27 @@ const AppState = {
 let dashboardData = null;
 let locationsData = null;
 let topoData = null;
+let usTrajData = null;
+let targetDataAll = null;
+let activityThresholds = null;
 
 async function init() {
     try {
-        const [dd, ld, td] = await Promise.all([
+        const [dd, ld, td, ut, tgt, at] = await Promise.all([
             d3.json("data/dashboard_data.json"),
             d3.json("data/locations.json"),
-            d3.json("data/us-states.json")
+            d3.json("data/us-states.json"),
+            d3.json("data/trajectories/US.json"),
+            d3.json("data/target_data.json"),
+            d3.json("data/activity_thresholds.json")
         ]);
 
         dashboardData = dd;
         locationsData = ld;
         topoData = td;
+        usTrajData = ut;
+        targetDataAll = tgt;
+        activityThresholds = at;
 
         // Auto-detect most recent reference date
         AppState.currentRefDate = dashboardData.most_recent_reference_date;

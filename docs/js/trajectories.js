@@ -1,23 +1,45 @@
-// Trajectory Specific Forecasts chart
+// Trajectory Specific Forecasts chart — redesigned with context panel
 
 const TRAJ_WIDTH = 1100;
 const TRAJ_HEIGHT = 420;
 const TRAJ_MARGIN = { top: 20, right: 30, bottom: 40, left: 60 };
+const TRAJ_FONT = "Helvetica Neue, Arial, sans-serif";
+const TRAJ_FONT_SIZE = "12px";
 
 let trajSvg, trajX, trajY, trajChartG;
-let trajData = null;        // per-location trajectory data
-let targetDataAll = null;    // historical observed data
-let historicalSeasons = null; // seasonal curves for context
-// Per-season visibility state (all enabled by default)
-let contextSeasons = {
-    "2022-23": true,
-    "2023-24": true,
-    "2024-25": true
-};
-let contextMenuOpen = false;
-let showContext = true;  // master toggle for all context lines
+let trajData = null;
+let historicalSeasons = null;
 
-// Shared tooltip element for the trajectory section
+// Slider snap values (includes 0 for "PI only" view)
+const TRAJ_SLIDER_VALUES = [0, 10, 25, 50, 100, 200];
+
+// Context panel state
+let contextSeasons = { "2022-23": true, "2023-24": true, "2024-25": true };
+let showSeasons = false;
+let showActivityBands = false;
+let showTrends = false;
+let trajColorHorizon = 0;
+
+// PI state
+let showPI = { "50": false, "90": false, "95": false };
+
+// Season styling — more distinct
+const SEASON_STYLES = {
+    "2022-23": { color: "#E07B54", dash: "8,4", width: 2 },
+    "2023-24": { color: "#7B68AE", dash: "4,4", width: 2 },
+    "2024-25": { color: "#4A9A6F", dash: "2,3", width: 2 }
+};
+
+// PI band styling (blue palette matching admissions tooltip)
+const PI_STYLES = {
+    "95": { fill: "#b0d4e8", opacity: 0.4, label: "95% PI" },
+    "90": { fill: "#6faed0", opacity: 0.4, label: "90% PI" },
+    "50": { fill: "#4682B4", opacity: 0.35, label: "50% PI" }
+};
+
+// Store aligned season data for tooltip lookup
+let _alignedSeasonData = {};
+
 const trajTooltip = () => d3.select("#traj-tooltip");
 
 function initTrajectoryChart() {
@@ -29,10 +51,11 @@ function initTrajectoryChart() {
         .attr("transform", `translate(${TRAJ_MARGIN.left},${TRAJ_MARGIN.top})`);
 
     // Layers for proper z-ordering
+    trajChartG.append("g").attr("class", "layer-activity-bands");
+    trajChartG.append("g").attr("class", "layer-pi-bands");
     trajChartG.append("g").attr("class", "layer-seasons");
     trajChartG.append("g").attr("class", "layer-trajectories");
     trajChartG.append("g").attr("class", "layer-axes");
-    trajChartG.append("g").attr("class", "layer-donut");
     trajChartG.append("g").attr("class", "layer-interaction");
     trajChartG.append("g").attr("class", "layer-observed");
 
@@ -49,29 +72,171 @@ function initTrajectoryChart() {
     d3.select("#traj-location").on("change", function () {
         loadAndDrawTrajectories(this.value);
     });
-    d3.select("#traj-count").on("change", () => drawTrajectories());
-    d3.select("#traj-horizon").on("change", () => drawTrajectories());
-    // Context dropdown: build checklist
-    initContextDropdown();
 
-    // Close context menu when clicking outside
-    document.addEventListener("click", (e) => {
-        if (!e.target.closest("#context-dropdown")) {
-            d3.select("#context-menu").classed("open", false);
-            contextMenuOpen = false;
-        }
-    });
+    // Initialize slider
+    initSlider();
 
-    // Load target data and historical seasons
-    Promise.all([
-        d3.json("data/target_data.json"),
-        d3.json("data/historical_seasons.json")
-    ]).then(([td, hs]) => {
-        targetDataAll = td;
+    // Initialize PI controls (top bar)
+    initPIControls();
+
+    // Initialize context panel
+    initContextPanel();
+
+    // Load historical seasons then draw
+    d3.json("data/historical_seasons.json").then(hs => {
         historicalSeasons = hs;
         loadAndDrawTrajectories("US");
     });
 }
+
+// --- Slider ---
+
+function initSlider() {
+    const slider = d3.select("#traj-slider");
+    const valueLabel = d3.select("#traj-slider-value");
+
+    slider.property("value", 5);
+    valueLabel.text("200");
+
+    slider.on("input", function () {
+        const idx = +this.value;
+        const val = TRAJ_SLIDER_VALUES[idx];
+        valueLabel.text(val === 0 ? "None" : val);
+        drawTrajectories();
+    });
+}
+
+function getSliderValue() {
+    const idx = +d3.select("#traj-slider").property("value");
+    return idx < TRAJ_SLIDER_VALUES.length ? TRAJ_SLIDER_VALUES[idx] : 200;
+}
+
+// --- Context Panel ---
+
+function initPIControls() {
+    const container = d3.select("#traj-pi-buttons");
+    container.selectAll("*").remove();
+
+    ["50", "90", "95"].forEach(level => {
+        const btn = container.append("button")
+            .attr("class", "traj-pi-btn" + (showPI[level] ? " active" : ""))
+            .attr("data-pi", level)
+            .on("click", function () {
+                showPI[level] = !showPI[level];
+                d3.select(this).classed("active", showPI[level]);
+                drawTrajectories();
+            });
+        btn.append("span")
+            .attr("class", "traj-pi-swatch")
+            .style("background", PI_STYLES[level].fill)
+            .style("opacity", PI_STYLES[level].opacity + 0.3);
+        btn.append("span").text(PI_STYLES[level].label);
+    });
+}
+
+function initContextPanel() {
+    d3.selectAll(".context-section-header").on("click", function () {
+        const section = d3.select(this).attr("data-section");
+        toggleContextSection(section);
+    });
+
+    buildSeasonsSection();
+    buildActivitySection();
+    buildTrendsSection();
+}
+
+function toggleContextSection(section) {
+    if (section === "seasons") {
+        showSeasons = !showSeasons;
+        d3.select("#ctx-seasons .context-section-header").classed("active", showSeasons);
+        d3.select("#ctx-seasons-body").classed("open", showSeasons);
+        if (showSeasons) {
+            Object.keys(contextSeasons).forEach(s => { contextSeasons[s] = true; });
+            updateSeasonButtons();
+        }
+    } else if (section === "activity") {
+        showActivityBands = !showActivityBands;
+        d3.select("#ctx-activity .context-section-header").classed("active", showActivityBands);
+        d3.select("#ctx-activity-body").classed("open", showActivityBands);
+    } else if (section === "trends") {
+        showTrends = !showTrends;
+        d3.select("#ctx-trends .context-section-header").classed("active", showTrends);
+        d3.select("#ctx-trends-body").classed("open", showTrends);
+    }
+    drawTrajectories();
+}
+
+function buildSeasonsSection() {
+    const body = d3.select("#ctx-seasons-body");
+    body.selectAll("*").remove();
+
+    Object.keys(contextSeasons).forEach(season => {
+        const style = SEASON_STYLES[season] || {};
+        const btn = body.append("button")
+            .attr("class", "ctx-season-btn" + (contextSeasons[season] ? " active" : ""))
+            .attr("data-season", season)
+            .on("click", function () {
+                contextSeasons[season] = !contextSeasons[season];
+                d3.select(this).classed("active", contextSeasons[season]);
+                if (!Object.values(contextSeasons).some(v => v)) {
+                    showSeasons = false;
+                    d3.select("#ctx-seasons .context-section-header").classed("active", false);
+                    d3.select("#ctx-seasons-body").classed("open", false);
+                }
+                drawTrajectories();
+            });
+
+        btn.append("span")
+            .attr("class", "ctx-season-swatch")
+            .style("background", style.color || "#ccc");
+        btn.append("span").text(season);
+    });
+}
+
+function updateSeasonButtons() {
+    d3.selectAll(".ctx-season-btn").each(function () {
+        const season = d3.select(this).attr("data-season");
+        d3.select(this).classed("active", contextSeasons[season]);
+    });
+}
+
+function buildActivitySection() {
+    const body = d3.select("#ctx-activity-body");
+    body.selectAll("*").remove();
+
+    ACTIVITY_ORDER.forEach(cat => {
+        const item = body.append("div").attr("class", "ctx-activity-item");
+        item.append("span")
+            .attr("class", "ctx-activity-swatch")
+            .style("background", ACTIVITY_COLORS[cat]);
+        item.append("span").text(ACTIVITY_LABELS[cat]);
+    });
+}
+
+function buildTrendsSection() {
+    const body = d3.select("#ctx-trends-body");
+    body.selectAll("*").remove();
+
+    // Horizon selector buttons
+    const horizonGroup = body.append("div").attr("class", "ctx-horizon-group");
+    const horizonLabels = ["Wk 1", "Wk 2", "Wk 3", "Wk 4"];
+
+    horizonLabels.forEach((label, i) => {
+        horizonGroup.append("button")
+            .attr("class", "ctx-horizon-btn" + (i === trajColorHorizon ? " active" : ""))
+            .attr("data-horizon", i)
+            .text(label)
+            .on("click", function () {
+                trajColorHorizon = +d3.select(this).attr("data-horizon");
+                horizonGroup.selectAll(".ctx-horizon-btn").classed("active", false);
+                d3.select(this).classed("active", true);
+                drawTrajectories();
+            });
+    });
+}
+
+
+// --- Main draw function ---
 
 async function loadAndDrawTrajectories(fips) {
     try {
@@ -83,7 +248,6 @@ async function loadAndDrawTrajectories(fips) {
     drawTrajectories();
 }
 
-// Public: called from map click to switch trajectory location
 function setTrajectoryLocation(fips) {
     d3.select("#traj-location").property("value", fips);
     loadAndDrawTrajectories(fips);
@@ -91,8 +255,7 @@ function setTrajectoryLocation(fips) {
 
 function drawTrajectories() {
     const fips = d3.select("#traj-location").property("value");
-    const numTrajectories = +d3.select("#traj-count").property("value");
-    const colorHorizon = +d3.select("#traj-horizon").property("value");
+    const numTrajectories = getSliderValue();
 
     const innerW = TRAJ_WIDTH - TRAJ_MARGIN.left - TRAJ_MARGIN.right;
     const innerH = TRAJ_HEIGHT - TRAJ_MARGIN.top - TRAJ_MARGIN.bottom;
@@ -103,45 +266,60 @@ function drawTrajectories() {
         .filter(d => d.value != null)
         .map(d => ({ date: new Date(d.date + "T00:00:00"), value: d.value, rate: d.rate }));
 
-    // Fixed start date: November 1 of current season
     const showFrom = new Date("2025-11-01T00:00:00");
-
     const recentObserved = observedParsed.filter(d => d.date >= showFrom);
 
-    // Get trajectory data for current reference date
     const refDate = AppState.currentRefDate;
     const refDateObj = new Date(refDate + "T00:00:00");
     const refTrajData = trajData?.data?.[refDate];
     const refDates = dashboardData.reference_dates;
 
-    // Limit trajectories to horizons 0-3 (4 weeks)
-    const maxHorizons = 4; // h0, h1, h2, h3
+    const maxHorizons = 4;
 
     // Compute domains
     let allDates = recentObserved.map(d => d.date);
     let allValues = recentObserved.map(d => d.value);
-
-    // Ensure x-axis starts at Oct 1
     allDates.push(showFrom);
 
     if (refTrajData) {
         const trajDates = refTrajData.dates.slice(0, maxHorizons).map(d => new Date(d + "T00:00:00"));
         allDates = allDates.concat(trajDates);
 
-        const sample = refTrajData.trajectories.slice(0, numTrajectories);
-        sample.forEach(t => {
+        // For domain, use the drawn trajectories plus all trajectories if PI is active
+        const anyPI = Object.values(showPI).some(v => v);
+        const domainTrajs = anyPI ? refTrajData.trajectories : refTrajData.trajectories.slice(0, numTrajectories);
+        domainTrajs.forEach(t => {
             allValues = allValues.concat(t.values.slice(0, maxHorizons));
         });
     }
 
-    // Add context season values to domain if any are showing
-    if (hasAnyContext() && historicalSeasons?.[fips]) {
-        Object.entries(historicalSeasons[fips]).forEach(([sName, season]) => {
+    // Compute and store aligned season data for tooltip
+    _alignedSeasonData = {};
+    if (showSeasons && historicalSeasons?.[fips]) {
+        const currentSeasonStart = new Date("2025-10-01T00:00:00");
+        Object.keys(historicalSeasons[fips]).forEach(sName => {
             if (!contextSeasons[sName]) return;
-            season.forEach(d => {
-                if (d.value != null) allValues.push(d.value);
-            });
+            const season = historicalSeasons[fips][sName];
+            _alignedSeasonData[sName] = season
+                .filter(d => d.value != null)
+                .map(d => {
+                    const alignedDate = new Date(currentSeasonStart);
+                    alignedDate.setDate(alignedDate.getDate() + d.week * 7);
+                    return { date: alignedDate, value: d.value };
+                })
+                .filter(d => d.date >= showFrom);
         });
+
+        // Add season values to domain
+        Object.values(_alignedSeasonData).forEach(lineData => {
+            lineData.forEach(d => allValues.push(d.value));
+        });
+    }
+
+    // Add activity threshold values to domain if bands shown
+    if (showActivityBands && activityThresholds?.[fips]) {
+        const th = activityThresholds[fips];
+        allValues.push(th.very_high);
     }
 
     if (allDates.length === 0) return;
@@ -156,6 +334,12 @@ function drawTrajectories() {
         .domain([0, yMax * 1.05])
         .range([innerH, 0]);
 
+    // --- Draw activity bands ---
+    drawActivityBands(fips, innerW, innerH);
+
+    // --- Draw PI bands ---
+    drawPIBands(refTrajData, maxHorizons, innerW, innerH);
+
     // --- Draw axes ---
     const axesG = trajChartG.select(".layer-axes");
     axesG.selectAll("*").remove();
@@ -164,72 +348,59 @@ function drawTrajectories() {
         .attr("transform", `translate(0,${innerH})`)
         .call(d3.axisBottom(trajX).ticks(8).tickFormat(d3.timeFormat("%b %d")))
         .selectAll("text")
-        .attr("font-family", "Helvetica Neue, Arial, sans-serif")
-        .attr("font-size", "10px");
+        .attr("font-family", TRAJ_FONT)
+        .attr("font-size", TRAJ_FONT_SIZE);
 
     axesG.append("g")
         .call(d3.axisLeft(trajY).ticks(6).tickFormat(d3.format(",.0f")))
         .selectAll("text")
-        .attr("font-family", "Helvetica Neue, Arial, sans-serif")
-        .attr("font-size", "10px");
+        .attr("font-family", TRAJ_FONT)
+        .attr("font-size", TRAJ_FONT_SIZE);
 
-    // Y-axis label
     axesG.append("text")
         .attr("transform", "rotate(-90)")
         .attr("x", -innerH / 2)
         .attr("y", -48)
         .attr("text-anchor", "middle")
-        .attr("font-family", "Helvetica Neue, Arial, sans-serif")
-        .attr("font-size", "11px")
+        .attr("font-family", TRAJ_FONT)
+        .attr("font-size", TRAJ_FONT_SIZE)
         .attr("fill", "#666")
         .text("Weekly Hospitalizations");
 
-    // --- Draw historical seasons (context) ---
+    // --- Draw historical seasons ---
     const seasonsG = trajChartG.select(".layer-seasons");
     seasonsG.selectAll("*").remove();
 
-    if (hasAnyContext() && historicalSeasons?.[fips]) {
-        const seasonNames = Object.keys(historicalSeasons[fips]);
-        const currentSeasonStart = new Date("2025-10-01T00:00:00");
+    if (showSeasons) {
+        Object.entries(_alignedSeasonData).forEach(([sName, lineData]) => {
+            if (lineData.length < 2) return;
+            const style = SEASON_STYLES[sName] || { color: "#ccc", dash: "4,4", width: 2 };
 
-        seasonNames.forEach(sName => {
-            if (!contextSeasons[sName]) return;
-            const season = historicalSeasons[fips][sName];
-            const lineData = season
-                .filter(d => d.value != null)
-                .map(d => {
-                    const alignedDate = new Date(currentSeasonStart);
-                    alignedDate.setDate(alignedDate.getDate() + d.week * 7);
-                    return { date: alignedDate, value: d.value };
-                })
-                .filter(d => d.date >= showFrom);
+            const line = d3.line()
+                .x(d => trajX(d.date))
+                .y(d => trajY(d.value))
+                .defined(d => d.value != null);
 
-            if (lineData.length > 1) {
-                const line = d3.line()
-                    .x(d => trajX(d.date))
-                    .y(d => trajY(d.value))
-                    .defined(d => d.value != null);
+            seasonsG.append("path")
+                .datum(lineData)
+                .attr("d", line)
+                .attr("fill", "none")
+                .attr("stroke", style.color)
+                .attr("stroke-width", style.width)
+                .attr("stroke-dasharray", style.dash)
+                .attr("opacity", 0.7);
 
-                seasonsG.append("path")
-                    .datum(lineData)
-                    .attr("class", "season-line")
-                    .attr("d", line)
-                    .attr("stroke", SEASON_COLORS[sName] || "#ccc")
-                    .attr("fill", "none")
-                    .attr("stroke-width", 1.5)
-                    .attr("opacity", 0.35);
-
-                // Season label
-                const last = lineData[lineData.length - 1];
-                seasonsG.append("text")
-                    .attr("x", trajX(last.date) + 4)
-                    .attr("y", trajY(last.value))
-                    .attr("font-family", "Helvetica Neue, Arial, sans-serif")
-                    .attr("font-size", "9px")
-                    .attr("fill", SEASON_COLORS[sName] || "#ccc")
-                    .attr("dominant-baseline", "middle")
-                    .text(sName);
-            }
+            // Season label at end
+            const last = lineData[lineData.length - 1];
+            seasonsG.append("text")
+                .attr("x", trajX(last.date) + 4)
+                .attr("y", trajY(last.value))
+                .attr("font-family", TRAJ_FONT)
+                .attr("font-size", TRAJ_FONT_SIZE)
+                .attr("fill", style.color)
+                .attr("dominant-baseline", "middle")
+                .attr("font-weight", "600")
+                .text(sName);
         });
     }
 
@@ -246,18 +417,28 @@ function drawTrajectories() {
             .y(v => trajY(v))
             .defined(v => v != null);
 
+        // When activity bands are shown, use black. Otherwise use trend colors.
+        const useNeutralColor = showActivityBands;
+
         sample.forEach(t => {
-            const trendKey = `h${colorHorizon}`;
-            const trend = t.trends[trendKey] || "stable";
-            const color = TREND_COLORS[trend] || "#ccc";
+            let color, opacity;
+            if (useNeutralColor) {
+                color = "#1a1a1a";
+                opacity = 0.12;
+            } else {
+                const trendKey = `h${trajColorHorizon}`;
+                const trend = t.trends[trendKey] || "stable";
+                color = TREND_COLORS[trend] || "#ccc";
+                opacity = 0.2;
+            }
 
             trajG.append("path")
                 .datum(t.values.slice(0, maxHorizons))
                 .attr("d", line)
                 .attr("fill", "none")
                 .attr("stroke", color)
-                .attr("stroke-width", 1)
-                .attr("opacity", 0.25);
+                .attr("stroke-width", 1.5)
+                .attr("opacity", opacity);
         });
     }
 
@@ -265,12 +446,10 @@ function drawTrajectories() {
     const obsG = trajChartG.select(".layer-observed");
     obsG.selectAll("*").remove();
 
-    // Split observed into in-sample (on or before ref date) and out-of-sample (after ref date)
-    const inSample = recentObserved.filter(d => d.date <= refDateObj);
-    const outOfSample = recentObserved.filter(d => d.date > refDateObj);
+    const inSample = recentObserved.filter(d => d.date < refDateObj);
+    const outOfSample = recentObserved.filter(d => d.date >= refDateObj);
 
     if (recentObserved.length > 1) {
-        // Draw full connecting line (continuous through both in- and out-of-sample)
         const line = d3.line()
             .x(d => trajX(d.date))
             .y(d => trajY(d.value));
@@ -282,43 +461,6 @@ function drawTrajectories() {
             .attr("stroke", "#1a1a1a")
             .attr("stroke-width", 2);
 
-        // Invisible wide line for easier hover
-        obsG.append("path")
-            .datum(recentObserved)
-            .attr("d", line)
-            .attr("fill", "none")
-            .attr("stroke", "transparent")
-            .attr("stroke-width", 14)
-            .style("pointer-events", "stroke")
-            .style("cursor", "default")
-            .on("mouseenter", function (event) {
-                showNearestObsTooltip(event, recentObserved, refDateObj);
-            })
-            .on("mousemove", function (event) {
-                showNearestObsTooltip(event, recentObserved, refDateObj);
-            })
-            .on("mouseleave", hideTrajTooltip);
-
-        // In-sample dots: solid black with invisible hit targets
-        const allDots = [...inSample.map(d => ({ ...d, label: "Observed" })),
-                         ...outOfSample.map(d => ({ ...d, label: "Observed (out-of-sample)" }))];
-
-        // Invisible hit targets (larger radius)
-        obsG.selectAll(".obs-hit")
-            .data(allDots)
-            .join("circle")
-            .attr("class", "obs-hit")
-            .attr("cx", d => trajX(d.date))
-            .attr("cy", d => trajY(d.value))
-            .attr("r", 10)
-            .attr("fill", "transparent")
-            .style("pointer-events", "all")
-            .style("cursor", "default")
-            .on("mouseenter", (event, d) => showObsTooltip(event, d, d.label))
-            .on("mousemove", (event) => positionTrajTooltip(event))
-            .on("mouseleave", hideTrajTooltip);
-
-        // Visible in-sample dots
         obsG.selectAll(".obs-in")
             .data(inSample)
             .join("circle")
@@ -330,7 +472,6 @@ function drawTrajectories() {
             .attr("stroke", "none")
             .style("pointer-events", "none");
 
-        // Visible out-of-sample dots
         obsG.selectAll(".obs-out")
             .data(outOfSample)
             .join("circle")
@@ -344,11 +485,10 @@ function drawTrajectories() {
             .style("pointer-events", "none");
     }
 
-    // --- Click-to-nearest-reference-date interaction ---
+    // --- Interaction overlay (hover line + tooltip + click-to-jump) ---
     const interG = trajChartG.select(".layer-interaction");
     interG.selectAll("*").remove();
 
-    // Add invisible overlay for click-to-jump
     interG.append("rect")
         .attr("width", innerW)
         .attr("height", innerH)
@@ -358,16 +498,12 @@ function drawTrajectories() {
         .on("click", (event) => {
             const [mx] = d3.pointer(event);
             const clickDate = trajX.invert(mx);
-            // Find nearest reference date
             let closest = refDates[0];
             let minDist = Infinity;
             refDates.forEach(rd => {
                 const rdDate = new Date(rd + "T00:00:00");
                 const dist = Math.abs(clickDate - rdDate);
-                if (dist < minDist) {
-                    minDist = dist;
-                    closest = rd;
-                }
+                if (dist < minDist) { minDist = dist; closest = rd; }
             });
             if (closest !== AppState.currentRefDate) {
                 AppState.currentRefDate = closest;
@@ -377,20 +513,32 @@ function drawTrajectories() {
             }
         })
         .on("mousemove", (event) => {
-            // Show a hover indicator for the nearest ref date
             const [mx] = d3.pointer(event);
-            const clickDate = trajX.invert(mx);
-            let closest = refDates[0];
-            let minDist = Infinity;
-            refDates.forEach(rd => {
-                const rdDate = new Date(rd + "T00:00:00");
-                const dist = Math.abs(clickDate - rdDate);
-                if (dist < minDist) {
-                    minDist = dist;
-                    closest = rd;
-                }
+            const hoverDate = trajX.invert(mx);
+
+            // Find nearest weekly date from observed + season data
+            const allWeeklyDates = recentObserved.map(d => d.date);
+            Object.values(_alignedSeasonData).forEach(sd => {
+                sd.forEach(d => allWeeklyDates.push(d.date));
             });
-            const hoverX = trajX(new Date(closest + "T00:00:00"));
+
+            let nearestDate = null;
+            let minDist = Infinity;
+            allWeeklyDates.forEach(d => {
+                const dist = Math.abs(d - hoverDate);
+                if (dist < minDist) { minDist = dist; nearestDate = d; }
+            });
+
+            if (!nearestDate) return;
+
+            // Snap threshold: only show if within ~5 days
+            if (minDist > 5 * 24 * 60 * 60 * 1000) {
+                interG.select(".hover-line").remove();
+                hideTrajTooltip();
+                return;
+            }
+
+            const hoverX = trajX(nearestDate);
             interG.select(".hover-line").remove();
             interG.append("line")
                 .attr("class", "hover-line")
@@ -400,216 +548,196 @@ function drawTrajectories() {
                 .attr("stroke-width", 1)
                 .attr("stroke-dasharray", "4,3")
                 .attr("pointer-events", "none");
+
+            // Build tooltip with values at this date
+            showHoverTooltip(event, nearestDate, recentObserved, refDateObj);
         })
         .on("mouseleave", () => {
             interG.select(".hover-line").remove();
+            hideTrajTooltip();
         });
 
-    // Draw a small marker for the active reference date (just a tick on x-axis, no vertical line)
-    const activeRefX = trajX(refDateObj);
-    interG.append("polygon")
-        .attr("points", `${activeRefX - 5},${innerH + 2} ${activeRefX + 5},${innerH + 2} ${activeRefX},${innerH + 8}`)
-        .attr("fill", "#1a1a1a")
-        .attr("pointer-events", "none");
-
-    interG.append("text")
-        .attr("x", activeRefX)
-        .attr("y", innerH + 20)
-        .attr("text-anchor", "middle")
-        .attr("font-family", "Helvetica Neue, Arial, sans-serif")
-        .attr("font-size", "9px")
-        .attr("fill", "#1a1a1a")
-        .attr("font-weight", "700")
-        .attr("pointer-events", "none")
-        .text("Ref: " + d3.timeFormat("%b %d")(refDateObj));
-
-    // --- Draw inset donut chart ---
-    drawDonut(fips, colorHorizon, innerH);
-
-    // --- Update trajectory legend ---
+    // --- Update legend ---
     updateTrajLegend();
 }
 
-function drawDonut(fips, horizon, innerH) {
-    const donutG = trajChartG.select(".layer-donut");
-    donutG.selectAll("*").remove();
+// --- PI Bands ---
 
-    const refDate = AppState.currentRefDate;
-    const entry = dashboardData.data[refDate]?.[fips]?.[String(horizon)];
-    if (!entry) return;
+function drawPIBands(refTrajData, maxHorizons, innerW, innerH) {
+    const piG = trajChartG.select(".layer-pi-bands");
+    piG.selectAll("*").remove();
 
-    const probs = entry.trend_probs;
-    const donutR = Math.round(innerH * 0.275);
-    const donutInner = Math.round(donutR * 0.55);
-    // Center between Nov 23 and Nov 30 on the x-axis
-    const nov23 = new Date("2025-11-23T00:00:00");
-    const nov30 = new Date("2025-11-30T00:00:00");
-    const cx = (trajX(nov23) + trajX(nov30)) / 2;
-    const cy = innerH / 2;
+    const anyPI = Object.values(showPI).some(v => v);
+    if (!anyPI || !refTrajData) return;
 
-    const g = donutG.append("g")
-        .attr("transform", `translate(${cx},${cy})`);
+    const dates = refTrajData.dates.slice(0, maxHorizons).map(d => new Date(d + "T00:00:00"));
+    const allTrajs = refTrajData.trajectories;
+    if (allTrajs.length === 0) return;
 
-    // Background circle
-    g.append("circle")
-        .attr("r", donutR + 2)
-        .attr("fill", "white")
-        .attr("stroke", "#eee")
-        .attr("stroke-width", 0.5);
+    // Compute percentiles at each forecast date
+    const piData = dates.map((date, i) => {
+        const vals = allTrajs.map(t => t.values[i]).filter(v => v != null).sort((a, b) => a - b);
+        const n = vals.length;
+        const pct = p => vals[Math.min(Math.floor(p * n), n - 1)];
+        return {
+            date,
+            p025: pct(0.025), p05: pct(0.05), p25: pct(0.25),
+            p75: pct(0.75), p95: pct(0.95), p975: pct(0.975),
+            median: pct(0.5)
+        };
+    });
 
-    const arcGen = d3.arc()
-        .innerRadius(donutInner)
-        .outerRadius(donutR);
+    // Draw bands from widest to narrowest
+    const bandDefs = [
+        { key: "95", lower: "p025", upper: "p975" },
+        { key: "90", lower: "p05", upper: "p95" },
+        { key: "50", lower: "p25", upper: "p75" }
+    ];
 
-    const pie = d3.pie()
-        .value(d => d.prob)
-        .sort(null);
+    bandDefs.forEach(({ key, lower, upper }) => {
+        if (!showPI[key]) return;
+        const style = PI_STYLES[key];
 
-    const data = TREND_ORDER.map(cat => ({
-        cat,
-        prob: probs[cat] || 0,
-        color: TREND_COLORS[cat]
-    }));
+        const area = d3.area()
+            .x(d => trajX(d.date))
+            .y0(d => trajY(d[lower]))
+            .y1(d => trajY(d[upper]));
 
-    const arcs = pie(data);
+        piG.append("path")
+            .datum(piData)
+            .attr("d", area)
+            .attr("fill", style.fill)
+            .attr("opacity", style.opacity)
+            .attr("stroke", "none");
+    });
+}
 
-    arcs.forEach(arc => {
-        if (arc.data.prob > 0) {
-            g.append("path")
-                .attr("d", arcGen(arc))
-                .attr("fill", arc.data.color)
-                .attr("stroke", "#fff")
-                .attr("stroke-width", 0.5)
-                .style("cursor", "default")
-                .on("mouseenter", (event) => {
-                    const pct = Math.round(arc.data.prob * 100);
-                    const label = TREND_LABELS[arc.data.cat];
-                    showTextTooltip(event, `${label}: ${pct}%`);
-                })
-                .on("mousemove", (event) => positionTrajTooltip(event))
-                .on("mouseleave", hideTrajTooltip);
+// --- Activity Bands ---
+
+function drawActivityBands(fips, innerW, innerH) {
+    const bandsG = trajChartG.select(".layer-activity-bands");
+    bandsG.selectAll("*").remove();
+
+    if (!showActivityBands || !activityThresholds?.[fips]) return;
+
+    const th = activityThresholds[fips];
+
+    // Boundaries: moderate, high, very_high
+    // Low: 0 to moderate, Moderate: moderate to high, High: high to very_high, Very High: above very_high
+    const bands = [
+        { y0: 0, y1: th.moderate, cat: "low" },
+        { y0: th.moderate, y1: th.high, cat: "moderate" },
+        { y0: th.high, y1: th.very_high, cat: "high" },
+        { y0: th.very_high, y1: trajY.domain()[1], cat: "very_high" }
+    ];
+
+    bands.forEach(band => {
+        const yTop = trajY(Math.min(band.y1, trajY.domain()[1]));
+        const yBot = trajY(Math.max(band.y0, 0));
+        const h = yBot - yTop;
+        if (h <= 0) return;
+
+        bandsG.append("rect")
+            .attr("x", 0)
+            .attr("y", yTop)
+            .attr("width", innerW)
+            .attr("height", h)
+            .attr("fill", ACTIVITY_BAND_COLORS[band.cat])
+            .attr("stroke", "none");
+
+        // Label on the LEFT edge
+        const labelY = yTop + h / 2;
+        if (h > 14) {
+            bandsG.append("text")
+                .attr("x", 6)
+                .attr("y", labelY)
+                .attr("text-anchor", "start")
+                .attr("dominant-baseline", "middle")
+                .attr("font-family", TRAJ_FONT)
+                .attr("font-size", "14px")
+                .attr("fill", ACTIVITY_TEXT_COLORS[band.cat])
+                .attr("font-weight", "700")
+                .text(ACTIVITY_LABELS[band.cat]);
         }
     });
-
-    // Center text: most likely category (full name)
-    const mostLikely = entry.trend_most_likely;
-
-    g.append("text")
-        .attr("class", "donut-label")
-        .attr("y", 1)
-        .text(TREND_LABELS[mostLikely] || "");
-
-    // Title above donut
-    g.append("text")
-        .attr("y", -donutR - 6)
-        .attr("text-anchor", "middle")
-        .attr("font-family", "Helvetica Neue, Arial, sans-serif")
-        .attr("font-size", "9px")
-        .attr("fill", "#999")
-        .text("Trend Dist.");
 }
 
-// --- Context dropdown checklist ---
-
-function initContextDropdown() {
-    const menu = d3.select("#context-menu");
-    menu.selectAll("*").remove();
-
-    Object.keys(contextSeasons).forEach(season => {
-        const label = menu.append("label");
-        label.append("input")
-            .attr("type", "checkbox")
-            .property("checked", contextSeasons[season])
-            .on("change", function () {
-                contextSeasons[season] = this.checked;
-                // If user unchecked all individually, turn master off
-                showContext = Object.values(contextSeasons).some(v => v);
-                updateContextBtnState();
-                drawTrajectories();
-            });
-        label.append("span")
-            .attr("class", "season-swatch")
-            .style("background", SEASON_COLORS[season] || "#ccc");
-        label.append("span").text(season);
-    });
-
-    // Main button: master toggle all context lines on/off
-    d3.select("#context-btn").on("click", function (e) {
-        e.stopPropagation();
-        showContext = !showContext;
-        // When toggling on, enable all seasons; when off, keep their state but hide all
-        if (showContext) {
-            Object.keys(contextSeasons).forEach(s => { contextSeasons[s] = true; });
-            // Update checkboxes
-            menu.selectAll("input[type='checkbox']").property("checked", true);
-        }
-        updateContextBtnState();
-        drawTrajectories();
-    });
-
-    // Arrow button: open/close the dropdown for individual season control
-    d3.select("#context-arrow").on("click", function (e) {
-        e.stopPropagation();
-        contextMenuOpen = !contextMenuOpen;
-        d3.select("#context-menu").classed("open", contextMenuOpen);
-    });
-
-    updateContextBtnState();
-}
-
-function updateContextBtnState() {
-    d3.select("#context-btn")
-        .classed("active", showContext)
-        .text(showContext ? "Hide Context" : "Add Context");
-}
-
-function hasAnyContext() {
-    return showContext && Object.values(contextSeasons).some(v => v);
-}
-
-// --- Trajectory legend ---
+// --- Legend ---
 
 function updateTrajLegend() {
     const container = d3.select("#traj-legend");
     container.selectAll("*").remove();
 
-    TREND_ORDER.forEach(cat => {
-        const item = container.append("span").attr("class", "traj-legend-item");
-        item.append("span")
-            .attr("class", "traj-legend-swatch")
-            .style("background", TREND_COLORS[cat]);
-        item.append("span").text(TREND_LABELS[cat]);
-    });
+    const numTrajectories = getSliderValue();
+
+    if (showActivityBands) {
+        ACTIVITY_ORDER.forEach(cat => {
+            const item = container.append("span").attr("class", "traj-legend-item");
+            item.append("span")
+                .attr("class", "traj-legend-swatch")
+                .style("background", ACTIVITY_COLORS[cat])
+                .style("opacity", "0.5");
+            item.append("span").text(ACTIVITY_LABELS[cat]);
+        });
+    } else if (numTrajectories > 0) {
+        TREND_ORDER.forEach(cat => {
+            const item = container.append("span").attr("class", "traj-legend-item");
+            item.append("span")
+                .attr("class", "traj-legend-swatch")
+                .style("background", TREND_COLORS[cat]);
+            item.append("span").text(TREND_LABELS[cat]);
+        });
+    }
+
+    // Add PI legend items when active
+    const anyPI = Object.values(showPI).some(v => v);
+    if (anyPI) {
+        ["50", "90", "95"].forEach(level => {
+            if (!showPI[level]) return;
+            const style = PI_STYLES[level];
+            const item = container.append("span").attr("class", "traj-legend-item");
+            item.append("span")
+                .attr("class", "traj-legend-swatch")
+                .style("background", style.fill)
+                .style("opacity", style.opacity + 0.2);
+            item.append("span").text(style.label);
+        });
+    }
 }
 
-// --- Trajectory chart tooltips ---
+// --- Hover Tooltip ---
 
-function showNearestObsTooltip(event, data, refDateObj) {
-    const [mx] = d3.pointer(event, trajChartG.node());
-    const mouseDate = trajX.invert(mx);
-    let nearest = data[0];
-    let minDist = Infinity;
-    data.forEach(d => {
-        const dist = Math.abs(d.date - mouseDate);
-        if (dist < minDist) { minDist = dist; nearest = d; }
-    });
-    const label = nearest.date > refDateObj ? "Observed (out-of-sample)" : "Observed";
-    showObsTooltip(event, nearest, label);
-}
-
-function showObsTooltip(event, d, label) {
+function showHoverTooltip(event, nearestDate, recentObserved, refDateObj) {
     const fmt = d3.timeFormat("%b %d, %Y");
     const valFmt = d3.format(",.0f");
-    const rateFmt = d3.format(",.2f");
-    const tt = trajTooltip();
-    let html = `<strong>${label}</strong><br>Week ending ${fmt(d.date)}<br>${valFmt(d.value)} hospitalizations`;
-    if (d.rate != null) {
-        html += `<br>${rateFmt(d.rate)} per 100k`;
+
+    let html = `<div class="traj-tip-header">Week ending ${fmt(nearestDate)}</div>`;
+
+    // Current season observed
+    const obsPoint = recentObserved.find(d => Math.abs(d.date - nearestDate) < 24 * 60 * 60 * 1000);
+    if (obsPoint) {
+        const label = obsPoint.date >= refDateObj ? "Observed (out-of-sample)" : "Observed";
+        html += `<div class="traj-tip-row"><span class="traj-tip-swatch" style="background:#1a1a1a"></span>${label}: <strong>${valFmt(obsPoint.value)}</strong></div>`;
     }
+
+    // Previous season values
+    Object.entries(_alignedSeasonData).forEach(([sName, data]) => {
+        const style = SEASON_STYLES[sName] || {};
+        const point = data.find(d => Math.abs(d.date - nearestDate) < 24 * 60 * 60 * 1000);
+        if (point) {
+            html += `<div class="traj-tip-row"><span class="traj-tip-swatch" style="background:${style.color}"></span>${sName}: <strong>${valFmt(point.value)}</strong></div>`;
+        }
+    });
+
+    if (html.indexOf("traj-tip-row") === -1) return; // nothing to show
+
+    const tt = trajTooltip();
     tt.html(html);
     tt.classed("visible", true);
     positionTrajTooltip(event);
 }
+
+// --- Tooltips ---
 
 function showTextTooltip(event, text) {
     const tt = trajTooltip();

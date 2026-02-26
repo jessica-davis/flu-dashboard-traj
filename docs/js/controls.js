@@ -51,16 +51,16 @@ function buildDateButtons() {
     const container = d3.select("#date-buttons");
     container.selectAll("*").remove();
 
-    const horizonLabels = {1: "+1 Wk", 2: "+2 Wk", 3: "+3 Wk", 4: "+4 Wk"};
+    const horizonLabels = {0: "Wk 1", 1: "Wk 2", 2: "Wk 3", 3: "Wk 4"};
 
-    for (let h = 1; h <= 4; h++) {
+    for (let h = 0; h <= 3; h++) {
         const targetSat = new Date(refDate + "T00:00:00");
         targetSat.setDate(targetSat.getDate() + h * 7);
 
         const targetSun = new Date(targetSat);
         targetSun.setDate(targetSun.getDate() - 6);
 
-        const label = horizonLabels[h] || `+${h} Wk`;
+        const label = horizonLabels[h] || `Wk ${h + 1}`;
         const dateRange = `${formatShortDate(targetSun)}\u2013${formatShortDate(targetSat)}`;
 
         const btn = container.append("button")
