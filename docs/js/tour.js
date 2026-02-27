@@ -13,11 +13,11 @@ const TOUR_STEPS = [
             items: [
                 {
                     title: "Influenza Trend",
-                    body: "The trend forecast predicts whether flu hospitalizations are expected to <em>increase</em>, <em>decrease</em>, or <em>remain stable</em> compared to a reference week. (the week prior to horizon 0)" +
-                        "Each horizon and model trajectory is classified into one of five categories based on the predicted change in hospitalization rate per 100,000 population: " +
-                        "<strong>Large Decrease</strong>, <strong>Decrease</strong>, <strong>Stable</strong>, <strong>Increase</strong>, and <strong>Large Increase</strong>.<br><br>" +
-                        "To reduce the impact of reporting revisions and noise in small counts, any week pair with a difference of fewer than 10 hospital admissions is classified as <strong>Stable</strong>. " +
-                        "Beyond that, classification depends on the magnitude of the forecasted rate change (per 100k). Specifically, this is classified as the difference between the Forecasted and Reference week hospitalization rates (per 100k).<br><br> " +
+                    body: "The trend forecast predicts whether flu hospitalizations are expected to <em>increase</em>, <em>decrease</em>, or <em>remain stable</em> relative to a reference week (the week prior to horizon 0). " +
+                    "Each horizon and model trajectory is classified into one of five categories based on the predicted change in hospitalization rate per 100,000: " +
+                    "<strong>Large Decrease</strong>, <strong>Decrease</strong>, <strong>Stable</strong>, <strong>Increase</strong>, and <strong>Large Increase</strong>.<br><br>" +
+                    "To reduce the impact of reporting revisions and noise in small counts, any week pair with a difference of fewer than 10 hospital admissions is automatically classified as <strong>Stable</strong>. " +
+                    "The remaining categories are determined by the magnitude and direction of the rate change difference between the forecasted and reference weeks. See the table below for thresholds (decreasing categories assume a negative change):<br><br> " +
                         '<table class="tour-threshold-table">' +
                         "<thead><tr><th>Horizon</th><th>Stable</th><th>Inc / Dec</th><th>Large Inc / Dec</th></tr></thead>" +
                         "<tbody>" +
@@ -34,9 +34,8 @@ const TOUR_STEPS = [
                     title: "Influenza Activity",
                     body: "Activity levels represent how observed and predicted hospitalization incidence compare to historical baseline and epidemic values for a particular region. " +
                         "The thresholds between activity levels are obtained with the Moving Epidemic Method (MEM) using the MEM R package. " +
-                        "Thresholds are based on three seasons of Health and Human Services data from February 2022 through April 2024.<br><br>" +
-                        "After determining an optimal split between epidemic and pre/post-epidemic weeks for each season of data, " +
-                        "MEM uses the highest epidemic and non-epidemic values to calculate thresholds characterizing the levels of intensity of the epidemic periods " +
+                        "Thresholds are based on three seasons of Health and Human Services data of weekly influenza hospital admissions from February 2022 through April 2024.<br><br>" +
+                        "This method calculates activity thresholds that characterize the levels of intensity of the epidemic periods " +
                         "and the transition between non-epidemic and epidemic periods. " +
                         "The activity levels shown reflect epidemic intensity thresholds such that, over many seasons, an expected 40% of weeks would fall below the <strong>Medium</strong> threshold, " +
                         "50% of weeks would cross the Medium threshold but fall below the <strong>High</strong> threshold, " +
@@ -49,7 +48,7 @@ const TOUR_STEPS = [
                     title: "Weekly Hospital Admissions",
                     body: "This view shows the forecasted weekly influenza hospital admissions at different levels of uncertainty. " +
                         "The map is colored by the predicted hospitalization count (or rate per 100,000 population). " +
-                        "Hover over a state to see the four-week-ahead forecasted hospitalization time series with different prediction intervals showing the range of possible outcomes " +
+                        "Hover over a state to see the four-week-ahead forecasted hospitalization time series with different prediction intervals " +
                         "(these 4 weeks correspond to the Forecast Week dates at the bottom of the map). " +
                         "There is a vertical line over the horizon that is selected in the forecast week selector which represents what values the states are colored by."
                 }
@@ -68,7 +67,7 @@ const TOUR_STEPS = [
         selector: ".estimate-control",
         infoKey: "map",
         title: "Uncertainty Estimates",
-        text: "Every forecast comes with a range of possible outcomes. " +
+        text: "In order to show spatial uncertainty, we provide buttons that allow you to view different uncertainty estimates for each state. " +
             "For the <strong>Influenza Trend</strong> and <strong>Influenza Activity</strong> views, the <strong>Most Likely</strong> forecast is the category with the highest probability (the mode). " +
             "For <strong>Weekly Hospital Admissions</strong>, it is the median prediction of the forecast.<br><br>" +
             "The <strong>Lower End</strong> and <strong>Upper End</strong> estimates correspond to the 10th and 90th percentiles. " +
@@ -80,10 +79,7 @@ const TOUR_STEPS = [
         selector: ".card-gauges",
         infoKey: "gauges",
         title: "US Summary",
-        text: "This panel provides a general overview of the most likely estimates for the forecasted trend, activity, and hospital admissions, and updates depending on which view is selected. " +
-            "The dial on the gauge shows a weighted average position across the trend or activity probability distributions for the US as a whole. " +
-            "The bar chart below shows the full uncertainty distribution of trends or activity levels for the US. " +
-            "The Weekly Hospital Admissions tab shows the binned probability distribution of forecasted admissions.",
+        text: "This panel summarizes the most likely estimates for forecasted trend, activity, and hospital admissions, updating based on the selected view. The gauge dial shows a weighted average position across the trend or activity probability distribution for the US as a whole, while the bar chart below displays the full uncertainty distribution. The Weekly Hospital Admissions tab shows the binned probability distribution of forecasted admissions.",
         position: "left"
     },
     {
