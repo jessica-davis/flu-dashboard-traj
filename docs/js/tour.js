@@ -2,67 +2,158 @@
 
 const TOUR_STEPS = [
     {
-        selector: "#tab-bar",
-        title: "Trend vs. Activity",
-        text: "Switch between three views. <strong>Trend</strong> shows whether hospitalizations are increasing or decreasing. <strong>Activity</strong> shows the overall flu activity level using hospitalization thresholds. <strong>Admissions</strong> shows the raw hospitalization count forecast.",
-        position: "bottom"
-    },
-    {
-        selector: ".card-map",
-        title: "US Forecast Map",
-        text: "The map shows state-level forecasts colored by category. Hover over a state to see its probability distribution computed from model trajectories. Click a state to jump to its trajectory forecast below.",
-        position: "right"
+        selectors: ["#tab-bar", ".card-map"],
+        infoKey: "map",
+        title: "Dashboard Views & Map",
+        text: "Switch between three views: <strong>Influenza Trend</strong>, <strong>Influenza Activity</strong>, and <strong>Weekly Hospital Admissions</strong> to see the forecast levels within each state. Hover over a state to see detailed forecast information, and click a state to jump to its trajectory forecast below.",
+        position: "bottom",
+        wide: true,
+        dropdown: {
+            label: "Learn about each view",
+            items: [
+                {
+                    title: "Influenza Trend",
+                    body: "The trend forecast predicts whether flu hospitalizations are expected to <em>increase</em>, <em>decrease</em>, or <em>remain stable</em> compared to a reference week. (the week prior to horizon 0)" +
+                        "Each horizon and model trajectory is classified into one of five categories based on the predicted change in hospitalization rate per 100,000 population: " +
+                        "<strong>Large Decrease</strong>, <strong>Decrease</strong>, <strong>Stable</strong>, <strong>Increase</strong>, and <strong>Large Increase</strong>.<br><br>" +
+                        "To reduce the impact of reporting revisions and noise in small counts, any week pair with a difference of fewer than 10 hospital admissions is classified as <strong>Stable</strong>. " +
+                        "Beyond that, classification depends on the magnitude of the forecasted rate change (per 100k). Specifically, this is classified as the difference between the Forecasted and Reference week hospitalization rates (per 100k).<br><br> " +
+                        '<table class="tour-threshold-table">' +
+                        "<thead><tr><th>Horizon</th><th>Stable</th><th>Inc / Dec</th><th>Large Inc / Dec</th></tr></thead>" +
+                        "<tbody>" +
+                        "<tr><td>0 (1 wk ahead)</td><td>&lt; 0.3</td><td>0.3 \u2013 1.7</td><td>\u2265 1.7</td></tr>" +
+                        "<tr><td>1 (2 wk ahead)</td><td>&lt; 0.5</td><td>0.5 \u2013 3.0</td><td>\u2265 3.0</td></tr>" +
+                        "<tr><td>2 (3 wk ahead)</td><td>&lt; 0.7</td><td>0.7 \u2013 4.0</td><td>\u2265 4.0</td></tr>" +
+                        "<tr><td>3 (4 wk ahead)</td><td>&lt; 1.0</td><td>1.0 \u2013 5.0</td><td>\u2265 5.0</td></tr>" +
+                        "</tbody></table>" +
+                        '<em style="font-size:11px;color:#888;">Rate change thresholds in hospitalizations per 100k. Counts &lt; 10 are always classified as Stable.</em><br><br>' +
+                        "The map displays the trend direction with the highest probability for each state. " +
+                        "Hover over a state to see the full probability distribution across all five trend categories."
+                },
+                {
+                    title: "Influenza Activity",
+                    body: "Activity levels represent how observed and predicted hospitalization incidence compare to historical baseline and epidemic values for a particular region. " +
+                        "The thresholds between activity levels are obtained with the Moving Epidemic Method (MEM) using the MEM R package. " +
+                        "Thresholds are based on three seasons of Health and Human Services data from February 2022 through April 2024.<br><br>" +
+                        "After determining an optimal split between epidemic and pre/post-epidemic weeks for each season of data, " +
+                        "MEM uses the highest epidemic and non-epidemic values to calculate thresholds characterizing the levels of intensity of the epidemic periods " +
+                        "and the transition between non-epidemic and epidemic periods. " +
+                        "The activity levels shown reflect epidemic intensity thresholds such that, over many seasons, an expected 40% of weeks would fall below the <strong>Medium</strong> threshold, " +
+                        "50% of weeks would cross the Medium threshold but fall below the <strong>High</strong> threshold, " +
+                        "and 10% of weeks would cross the <strong>High</strong> threshold.<br><br>" +
+                        "Hover over a state to see the full probability distribution of activity levels during the forecast week.<br><br>" +
+                        '<em style="font-size:11px;color:#888;">[1] Vega et al. (2012) Influenza surveillance in Europe: establishing epidemic thresholds by the moving epidemic method. <i>Influenza and Other Respiratory Viruses</i> 7(4), 546\u2013558.<br>' +
+                        '[2] Lozano JE. lozalojo/mem: Second release of the MEM R library. Zenodo. Available from: <a href="https://zenodo.org/record/165983" target="_blank" style="color:#888;">https://zenodo.org/record/165983</a>.</em>'
+                },
+                {
+                    title: "Weekly Hospital Admissions",
+                    body: "This view shows the forecasted weekly influenza hospital admissions at different levels of uncertainty. " +
+                        "The map is colored by the predicted hospitalization count (or rate per 100,000 population). " +
+                        "Hover over a state to see the four-week-ahead forecasted hospitalization time series with different prediction intervals showing the range of possible outcomes " +
+                        "(these 4 weeks correspond to the Forecast Week dates at the bottom of the map). " +
+                        "There is a vertical line over the horizon that is selected in the forecast week selector which represents what values the states are colored by."
+                }
+            ]
+        }
     },
     {
         selector: ".horizon-control",
+        infoKey: "map",
         title: "Forecast Week",
-        text: "Select a forecast week (Wk 1\u2013Wk 4). Wk 1 is the current week and Wk 4 is three weeks ahead. The date range for each week is shown on the button.",
+        text: "Each forecast predicts four weeks ahead. Click on a week to select it, the date range shown (e.g., Jan 5\u2013Jan 11) indicates the period that week covers. " +
+            "For example, Wk 3 means the forecast is looking three weeks out from the last reported data at the time of the forecast.",
         position: "right"
     },
     {
         selector: ".estimate-control",
+        infoKey: "map",
         title: "Uncertainty Estimates",
-        text: "Choose between the <strong>Most Likely</strong> (median) forecast, or the <strong>Lower End</strong> (10th percentile) and <strong>Upper End</strong> (90th percentile) to see the range of possible outcomes.",
+        text: "Every forecast comes with a range of possible outcomes. " +
+            "For the <strong>Influenza Trend</strong> and <strong>Influenza Activity</strong> views, the <strong>Most Likely</strong> forecast is the category with the highest probability (the mode). " +
+            "For <strong>Weekly Hospital Admissions</strong>, it is the median prediction of the forecast.<br><br>" +
+            "The <strong>Lower End</strong> and <strong>Upper End</strong> estimates correspond to the 10th and 90th percentiles. " +
+            "They indicate the probability that during a given week we will see either a lower or higher outcome than the most likely estimate " +
+            "(for the trend and activity forecasts, the more certain forecasts could show the same category for the lower and upper predictions).",
         position: "right"
     },
     {
         selector: ".card-gauges",
-        title: "National Summary",
-        text: "The gauge shows the probability-weighted national outlook. The bar chart below shows the full uncertainty distribution across categories. The text summarizes activity level, estimated admissions, and trend direction.",
+        infoKey: "gauges",
+        title: "US Summary",
+        text: "This panel provides a general overview of the most likely estimates for the forecasted trend, activity, and hospital admissions, and updates depending on which view is selected. " +
+            "The dial on the gauge shows a weighted average position across the trend or activity probability distributions for the US as a whole. " +
+            "The bar chart below shows the full uncertainty distribution of trends or activity levels for the US. " +
+            "The Weekly Hospital Admissions tab shows the binned probability distribution of forecasted admissions.",
         position: "left"
     },
     {
         selector: "#trajectory-section",
+        infoKey: "traj",
         title: "Trajectory Forecasts",
-        text: "Individual model simulations for a selected location. Each line represents one possible future. Use the <strong>Prediction Intervals</strong> buttons to overlay 50%, 90%, or 95% PI bands. Set trajectories to 0 to see PI bands alone. Click the chart to change the reference date.",
-        position: "top"
+        text: "The trajectory chart shows individual model realizations for a four week ahead forecast for a selected state.<br><br>" +
+            "<strong>Click on the chart</strong> to change the date the forecast was generated. " +
+            "<strong>Black dots</strong> represent surveillance data points known at the time of the forecast. " +
+            "<strong>White dots with a black outline</strong> represent surveillance data that was reported after the forecast was made.<br><br>" +
+            "<em>Note on data revisions:</em> hospitalization data is subject to reporting delays and revisions (known as backfill). " +
+            "The data available when the forecast was generated may differ slightly from the final reported numbers, " +
+            "so the model is fit to preliminary data that can change in subsequent weeks.",
+        position: "top",
+        wide: true
     },
     {
         selector: ".traj-controls",
+        infoKey: "traj",
         title: "Trajectory Controls",
-        text: "Select a <strong>Location</strong>, adjust the number of <strong>Trajectories</strong> shown (0\u2013200), and toggle <strong>Prediction Intervals</strong> (50%, 90%, 95% PI).",
+        text: "<strong>Location</strong> selects which state you want to view. You can also change the state by clicking on the map above. " +
+            "The <strong>Trajectories</strong> slider controls how many individual simulations are shown (0\u2013200). " +
+            "The <strong>Prediction Intervals</strong> buttons overlay fixed-time statistics on the chart: " +
+            "specifically the 50%, 90%, and 95% prediction intervals, which show the range within which the actual value is expected to fall.",
         position: "bottom"
     },
     {
         selector: ".traj-context-panel",
-        title: "Add Context Panel",
-        text: "Three collapsible sections: <strong>Compare to Previous Seasons</strong> overlays historical curves. <strong>Activity Levels</strong> shows colored threshold bands on the chart. <strong>Trend Forecasts</strong> colors trajectories by the selected horizon\u2019s trend category.",
+        infoKey: "traj",
+        title: "Add Context",
+        text: "In some instances it's useful to see how the current season and the forecast compare to previous seasons or other contextual information.<br><br>" +
+            "<strong>Compare to Previous Seasons</strong> overlays historical hospitalization curves behind the current visualization. " +
+            "<strong>Activity Levels</strong> visually shows where the thresholds fall for each location, so you can see where each week's forecast falls relative to historical intensity levels. " +
+            "<strong>Trend Forecasts</strong> highlights and colors each trajectory by its predicted direction (e.g., increasing or decreasing) " +
+            "depending on which forecast week is chosen (the 1-to-4-week-ahead forecast).",
         position: "left"
     }
 ];
 
-// Info text for each card's info button (keyed by data-info attribute)
-const INFO_TEXT = {
-    map: "The map shows state-level forecasts colored by trend, activity level, or admissions. Activity levels are classified using hospitalization thresholds (Low, Medium, High, Very High). Hover over a state to see the full probability distribution computed from model trajectories. Click a state to view its trajectory forecast below. Use the Forecast Week buttons to select Wk 1\u2013Wk 4 and the Uncertainty selector to view the most likely, lower, or upper estimate.",
-    gauges: "The gauge shows the probability-weighted national outlook. The bar chart displays the full uncertainty distribution across categories. The narrative text summarizes the current activity level, estimated weekly admissions, and the forecasted trend direction with probability.",
-    traj: "Individual model simulation trajectories for a selected location. Each line represents one possible future scenario from the ensemble model. Use the slider to adjust the number of trajectories (0\u2013200) or set to 0 to view only prediction intervals. Toggle 50%, 90%, or 95% prediction interval bands using the buttons at the top. The \u201cAdd Context\u201d panel on the right lets you compare to previous seasons, overlay activity level threshold bands, or color trajectories by trend forecast at a selected horizon. Click anywhere on the chart to change the reference date."
-};
+// Build INFO_TEXT automatically from TOUR_STEPS — single source of truth.
+// Each step's infoKey maps it to an info button. Steps sharing a key are combined.
+function buildInfoText() {
+    var result = {};
+    var divider = '<hr class="info-divider">';
+    TOUR_STEPS.forEach(function(step) {
+        if (!step.infoKey) return;
+        var html = '<div class="info-section"><strong class="info-section-title">' + step.title + '</strong>' + step.text;
+        // Include dropdown content expanded inline
+        if (step.dropdown) {
+            step.dropdown.items.forEach(function(item) {
+                html += divider + '<strong class="info-subsection-title">' + item.title + '</strong>' + item.body;
+            });
+        }
+        html += '</div>';
+        if (result[step.infoKey]) {
+            result[step.infoKey] += divider + html;
+        } else {
+            result[step.infoKey] = html;
+        }
+    });
+    return result;
+}
+
+var INFO_TEXT = buildInfoText();
 
 let tourActive = false;
 let tourStep = 0;
 let tourOverlay = null;
 let tourPopup = null;
-let tourHighlighted = null;
+let tourHighlighted = [];
 
 function startTour() {
     tourActive = true;
@@ -89,10 +180,8 @@ function startTour() {
 function endTour() {
     tourActive = false;
 
-    if (tourHighlighted) {
-        tourHighlighted.classList.remove("tour-spotlight");
-        tourHighlighted = null;
-    }
+    tourHighlighted.forEach(el => el.classList.remove("tour-spotlight"));
+    tourHighlighted = [];
 
     if (tourOverlay) {
         tourOverlay.remove();
@@ -121,66 +210,142 @@ function tourKeyHandler(e) {
     }
 }
 
+function buildDropdownHTML(dropdown) {
+    if (!dropdown) return "";
+    let html = '<div class="tour-dropdown">';
+    html += '<button class="tour-dropdown-toggle">' + dropdown.label + ' <span class="tour-dropdown-chevron">&#9662;</span></button>';
+    html += '<div class="tour-dropdown-body" style="display:none;">';
+    dropdown.items.forEach(function(item) {
+        html += '<div class="tour-dropdown-item">';
+        html += '<button class="tour-dropdown-item-header"><strong>' + item.title + '</strong> <span class="tour-dropdown-chevron">&#9662;</span></button>';
+        html += '<div class="tour-dropdown-item-body" style="display:none;">' + item.body + '</div>';
+        html += '</div>';
+    });
+    html += '</div></div>';
+    return html;
+}
+
+// Get combined bounding rect for multiple selectors
+function getCombinedRect(selectors) {
+    let minX = Infinity, minY = Infinity, maxX = -Infinity, maxY = -Infinity;
+    const els = [];
+    selectors.forEach(function(sel) {
+        const el = document.querySelector(sel);
+        if (!el) return;
+        els.push(el);
+        const r = el.getBoundingClientRect();
+        minX = Math.min(minX, r.left);
+        minY = Math.min(minY, r.top);
+        maxX = Math.max(maxX, r.right);
+        maxY = Math.max(maxY, r.bottom);
+    });
+    return {
+        els: els,
+        rect: { left: minX, top: minY, right: maxX, bottom: maxY,
+                width: maxX - minX, height: maxY - minY }
+    };
+}
+
 function goToStep(n) {
     tourStep = n;
-    const step = TOUR_STEPS[n];
-    const target = document.querySelector(step.selector);
-    if (!target) return;
+    var step = TOUR_STEPS[n];
 
-    if (tourHighlighted) {
-        tourHighlighted.classList.remove("tour-spotlight");
-    }
+    // Resolve target elements
+    var selectors = step.selectors || [step.selector];
+    var combined = getCombinedRect(selectors);
+    var targets = combined.els;
+    var rect = combined.rect;
 
-    target.scrollIntoView({ behavior: "smooth", block: "center" });
+    if (targets.length === 0) return;
 
-    setTimeout(() => {
-        target.classList.add("tour-spotlight");
-        tourHighlighted = target;
+    // Remove previous highlights
+    tourHighlighted.forEach(function(el) { el.classList.remove("tour-spotlight"); });
+    tourHighlighted = [];
 
-        const rect = target.getBoundingClientRect();
-        const pad = 8;
-        const r = 6;
-        const x1 = rect.left - pad;
-        const y1 = rect.top - pad;
-        const x2 = rect.right + pad;
-        const y2 = rect.bottom + pad;
+    // Scroll first target into view
+    targets[0].scrollIntoView({ behavior: "smooth", block: "center" });
 
-        tourOverlay.style.clipPath = `polygon(
-            0% 0%, 100% 0%, 100% 100%, 0% 100%, 0% 0%,
-            ${x1}px ${y1 + r}px,
-            ${x1 + r}px ${y1}px,
-            ${x2 - r}px ${y1}px,
-            ${x2}px ${y1 + r}px,
-            ${x2}px ${y2 - r}px,
-            ${x2 - r}px ${y2}px,
-            ${x1 + r}px ${y2}px,
-            ${x1}px ${y2 - r}px,
-            ${x1}px ${y1 + r}px
-        )`;
+    setTimeout(function() {
+        targets.forEach(function(el) {
+            el.classList.add("tour-spotlight");
+        });
+        tourHighlighted = targets;
 
-        const isLast = n === TOUR_STEPS.length - 1;
-        const isFirst = n === 0;
+        // Recompute rect after scroll
+        combined = getCombinedRect(selectors);
+        rect = combined.rect;
 
-        tourPopup.innerHTML = `
-            <button class="tour-close" aria-label="Close tour">&times;</button>
-            <div class="tour-step-title">${step.title}</div>
-            <div class="tour-step-text">${step.text}</div>
-            <div class="tour-nav">
-                <span class="tour-counter">${n + 1} of ${TOUR_STEPS.length}</span>
-                <div class="tour-arrows">
-                    <button class="tour-arrow tour-prev" ${isFirst ? "disabled" : ""} aria-label="Previous">&#8592;</button>
-                    <button class="tour-arrow tour-next" aria-label="${isLast ? "Finish" : "Next"}">${isLast ? "Finish &#10003;" : "&#8594;"}</button>
-                </div>
-            </div>
-        `;
+        var pad = 8;
+        var r = 6;
+        var x1 = rect.left - pad;
+        var y1 = rect.top - pad;
+        var x2 = rect.right + pad;
+        var y2 = rect.bottom + pad;
+
+        tourOverlay.style.clipPath = 'polygon(' +
+            '0% 0%, 100% 0%, 100% 100%, 0% 100%, 0% 0%, ' +
+            x1 + 'px ' + (y1 + r) + 'px, ' +
+            (x1 + r) + 'px ' + y1 + 'px, ' +
+            (x2 - r) + 'px ' + y1 + 'px, ' +
+            x2 + 'px ' + (y1 + r) + 'px, ' +
+            x2 + 'px ' + (y2 - r) + 'px, ' +
+            (x2 - r) + 'px ' + y2 + 'px, ' +
+            (x1 + r) + 'px ' + y2 + 'px, ' +
+            x1 + 'px ' + (y2 - r) + 'px, ' +
+            x1 + 'px ' + (y1 + r) + 'px)';
+
+        var isLast = n === TOUR_STEPS.length - 1;
+        var isFirst = n === 0;
+        var dropdownHTML = buildDropdownHTML(step.dropdown);
+
+        // Apply wide class for steps with longer content
+        tourPopup.className = "tour-popup" + (step.wide ? " tour-popup-wide" : "");
+
+        tourPopup.innerHTML =
+            '<button class="tour-close" aria-label="Close tour">&times;</button>' +
+            '<div class="tour-popup-body">' +
+                '<div class="tour-step-title">' + step.title + '</div>' +
+                '<div class="tour-step-text">' + step.text + '</div>' +
+                dropdownHTML +
+            '</div>' +
+            '<div class="tour-nav">' +
+                '<span class="tour-counter">' + (n + 1) + ' of ' + TOUR_STEPS.length + '</span>' +
+                '<div class="tour-arrows">' +
+                    '<button class="tour-arrow tour-prev" ' + (isFirst ? 'disabled' : '') + ' aria-label="Previous">&#8592;</button>' +
+                    '<button class="tour-arrow tour-next" aria-label="' + (isLast ? 'Finish' : 'Next') + '">' + (isLast ? 'Finish &#10003;' : '&#8594;') + '</button>' +
+                '</div>' +
+            '</div>';
 
         tourPopup.querySelector(".tour-close").addEventListener("click", endTour);
-        tourPopup.querySelector(".tour-prev").addEventListener("click", () => {
+        tourPopup.querySelector(".tour-prev").addEventListener("click", function() {
             if (tourStep > 0) goToStep(tourStep - 1);
         });
-        tourPopup.querySelector(".tour-next").addEventListener("click", () => {
+        tourPopup.querySelector(".tour-next").addEventListener("click", function() {
             if (tourStep < TOUR_STEPS.length - 1) goToStep(tourStep + 1);
             else endTour();
+        });
+
+        // Wire up dropdown toggles
+        var mainToggle = tourPopup.querySelector(".tour-dropdown-toggle");
+        if (mainToggle) {
+            mainToggle.addEventListener("click", function() {
+                var body = mainToggle.nextElementSibling;
+                var chevron = mainToggle.querySelector(".tour-dropdown-chevron");
+                var isOpen = body.style.display !== "none";
+                body.style.display = isOpen ? "none" : "block";
+                chevron.innerHTML = isOpen ? "&#9662;" : "&#9652;";
+                setTimeout(function() { positionPopup(rect, step.position); }, 50);
+            });
+        }
+        tourPopup.querySelectorAll(".tour-dropdown-item-header").forEach(function(hdr) {
+            hdr.addEventListener("click", function() {
+                var itemBody = hdr.nextElementSibling;
+                var chevron = hdr.querySelector(".tour-dropdown-chevron");
+                var isOpen = itemBody.style.display !== "none";
+                itemBody.style.display = isOpen ? "none" : "block";
+                chevron.innerHTML = isOpen ? "&#9662;" : "&#9652;";
+                setTimeout(function() { positionPopup(rect, step.position); }, 50);
+            });
         });
 
         positionPopup(rect, step.position);
@@ -188,17 +353,17 @@ function goToStep(n) {
 }
 
 function positionPopup(targetRect, preferred) {
-    const popup = tourPopup;
-    const gap = 14;
+    var popup = tourPopup;
+    var gap = 14;
 
     popup.style.left = "0px";
     popup.style.top = "0px";
-    const pw = popup.offsetWidth;
-    const ph = popup.offsetHeight;
-    const vw = window.innerWidth;
-    const vh = window.innerHeight;
+    var pw = popup.offsetWidth;
+    var ph = popup.offsetHeight;
+    var vw = window.innerWidth;
+    var vh = window.innerHeight;
 
-    let left, top;
+    var left, top;
 
     if (preferred === "bottom") {
         left = targetRect.left + targetRect.width / 2 - pw / 2;
@@ -223,46 +388,53 @@ function positionPopup(targetRect, preferred) {
     popup.style.top = top + "px";
 }
 
-// --- Info Buttons ---
+// --- Info Buttons (modal panel) ---
 
 function initInfoButtons() {
-    document.querySelectorAll(".info-btn").forEach(btn => {
-        btn.addEventListener("click", (e) => {
+    document.querySelectorAll(".info-btn").forEach(function(btn) {
+        btn.addEventListener("click", function(e) {
             e.stopPropagation();
-            const key = btn.getAttribute("data-info");
-            const text = INFO_TEXT[key];
+            var key = btn.getAttribute("data-info");
+            var text = INFO_TEXT[key];
             if (!text) return;
-
-            const popover = document.getElementById("info-popover");
-            const isVisible = popover.classList.contains("visible") &&
-                popover.dataset.activeKey === key;
-
-            // Toggle off if same button clicked
-            if (isVisible) {
-                popover.classList.remove("visible");
-                popover.dataset.activeKey = "";
-                return;
-            }
-
-            popover.textContent = text;
-            popover.dataset.activeKey = key;
-            popover.classList.add("visible");
-
-            // Position near the button
-            const btnRect = btn.getBoundingClientRect();
-            let left = btnRect.left - 260;
-            let top = btnRect.bottom + 8;
-
-            if (left < 16) left = 16;
-            if (top + 120 > window.innerHeight) top = btnRect.top - 120;
-
-            popover.style.left = left + "px";
-            popover.style.top = top + "px";
+            openInfoModal(text);
         });
     });
+}
 
-    // Close popover when clicking elsewhere
-    document.addEventListener("click", () => {
-        document.getElementById("info-popover").classList.remove("visible");
-    });
+function openInfoModal(html) {
+    // Remove existing modal if open
+    closeInfoModal();
+
+    var backdrop = document.createElement("div");
+    backdrop.className = "info-modal-backdrop";
+    backdrop.addEventListener("click", closeInfoModal);
+
+    var panel = document.createElement("div");
+    panel.className = "info-modal";
+    panel.addEventListener("click", function(e) { e.stopPropagation(); });
+    panel.innerHTML =
+        '<button class="info-modal-close" aria-label="Close">&times;</button>' +
+        '<div class="info-modal-body">' + html + '</div>';
+
+    backdrop.appendChild(panel);
+    document.body.appendChild(backdrop);
+
+    panel.querySelector(".info-modal-close").addEventListener("click", closeInfoModal);
+
+    // Close on Escape
+    document.addEventListener("keydown", infoModalKeyHandler);
+}
+
+function closeInfoModal() {
+    var existing = document.querySelector(".info-modal-backdrop");
+    if (existing) existing.remove();
+    document.removeEventListener("keydown", infoModalKeyHandler);
+}
+
+function infoModalKeyHandler(e) {
+    if (e.key === "Escape") {
+        e.preventDefault();
+        closeInfoModal();
+    }
 }
