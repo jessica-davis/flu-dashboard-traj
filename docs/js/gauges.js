@@ -97,7 +97,7 @@ function updateGauges() {
         d3.select("#admissions-dist").style("display", "none");
 
         const gaugeType = tab === "activity" ? "activity" : "trend";
-        const title = tab === "activity" ? "Activity Level" : "Trend Forecast";
+        const title = tab === "activity" ? "Activity Level: United States" : "Trend Forecast: United States";
 
         // Recreate gauge if type changed
         if (_currentGaugeType !== gaugeType) {
@@ -337,7 +337,7 @@ function updateAdmissionsDist() {
         .attr("font-size", "10px")
         .attr("font-weight", "600")
         .attr("fill", "#555")
-        .text("Weekly Hospitalizations Forecast");
+        .text("Weekly Hospitalizations Forecast: United States");
 
     // Title line 2: week dates
     svg.append("text")
@@ -444,8 +444,8 @@ function updateOverviewText() {
 
         // Trend adverb + direction
         const TREND_ADVERBS = {
-            large_decrease: "sharply", decrease: "", stable: "",
-            increase: "", large_increase: "sharply"
+            large_decrease: "largely", decrease: "", stable: "",
+            increase: "", large_increase: "largely"
         };
         const TREND_DIRECTIONS = {
             large_decrease: "decrease", decrease: "decrease",

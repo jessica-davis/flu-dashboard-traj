@@ -13,7 +13,7 @@
         <div class="header-row">
             <div>
                 <h1>Influenza Hospitalization Forecast</h1>
-                <p class="subtitle">Weekly forecasts powered by EpyStrain model at Northeastern University <span class="last-updated" id="last-updated"></span></p>
+                <p class="subtitle">Weekly forecasts of the EpyStrain model <span class="last-updated" id="last-updated"></span><button class="most-recent-btn" onclick="jumpToMostRecent()">Most Recent Forecast</button></p>
             </div>
             <a class="about-link" href="about.html">About</a>
         </div>
@@ -27,7 +27,9 @@
             <button class="tab active" data-tab="trend">Influenza Trend</button>
             <button class="tab" data-tab="activity">Influenza Activity</button>
             <button class="tab" data-tab="admissions">Weekly Hospital Admissions</button>
-            <button class="tour-btn" onclick="startTour()">Guided Tour</button>
+            <div class="tab-bar-actions">
+                <button class="tab-action" onclick="startTour()">Guided Tour</button>
+            </div>
         </div>
         <div class="cards-row">
             <!-- Map card -->
@@ -83,7 +85,7 @@
         <!-- Trajectory section -->
         <hr class="section-divider">
         <h2 class="section-title">Trajectory Specific Forecasts</h2>
-        <p class="section-subtitle">Individual model simulations by state — click a state on the map or use the dropdown below</p>
+        <p class="section-subtitle">Individual model simulations by state. Select a state from the map above or the dropdown below. Click anywhere on the chart to jump to the forecast generated that week.</p>
         <div class="card card-trajectories" id="trajectory-section">
             <div class="traj-header">
                 <div class="traj-controls">
@@ -139,14 +141,12 @@
     </main>
 
     <footer class="funding-footer">
-        This work was supported by xxxx
+        This work is supported by Cooperative Agreements NU38PW000005 from The Centers for Disease Control and Prevention (CDC) and CSTE and from CDC-RFA-FT-23-0069 from the CDC's Center for Forecasting and Outbreak Analytics.
     </footer>
 
     <!-- Tooltip containers -->
     <div class="tooltip" id="tooltip"></div>
     <div class="traj-tip" id="traj-tooltip"></div>
-    <!-- Info popover -->
-    <div class="info-popover" id="info-popover"></div>
 
     <script src="js/colors.js"></script>
     <script src="js/legend.js"></script>
