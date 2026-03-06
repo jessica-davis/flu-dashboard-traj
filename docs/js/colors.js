@@ -56,11 +56,11 @@ const ACTIVITY_TEXT_COLORS = {
 
 // Gauge descriptive text
 const TREND_DESCRIPTIONS = {
-    large_decrease: "Flu hospitalizations are forecast to decrease sharply",
+    large_decrease: "Flu hospitalizations are forecast to largely decrease",
     decrease: "Flu hospitalizations are forecast to decrease",
     stable: "Flu hospitalizations are forecast to remain stable",
     increase: "Flu hospitalizations are forecast to increase",
-    large_increase: "Flu hospitalizations are forecast to increase sharply"
+    large_increase: "Flu hospitalizations are forecast to largely increase"
 };
 
 const ACTIVITY_DESCRIPTIONS = {

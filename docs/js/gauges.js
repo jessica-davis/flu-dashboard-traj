@@ -444,8 +444,8 @@ function updateOverviewText() {
 
         // Trend adverb + direction
         const TREND_ADVERBS = {
-            large_decrease: "sharply", decrease: "", stable: "",
-            increase: "", large_increase: "sharply"
+            large_decrease: "largely", decrease: "", stable: "",
+            increase: "", large_increase: "largely"
         };
         const TREND_DIRECTIONS = {
             large_decrease: "decrease", decrease: "decrease",
