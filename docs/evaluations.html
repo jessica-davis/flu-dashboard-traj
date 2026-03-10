@@ -1,0 +1,129 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Evaluations — Influenza Hospitalization Forecast</title>
+    <link rel="stylesheet" href="css/style.css">
+    <script src="https://d3js.org/d3.v7.min.js"></script>
+    <script src="https://d3js.org/topojson.v3.min.js"></script>
+</head>
+<body>
+    <header>
+        <div class="header-row">
+            <div>
+                <h1>Influenza Hospitalization Forecast</h1>
+                <p class="subtitle">Weekly forecasts of the EpyStrain model <span class="last-updated" id="eval-last-updated"></span></p>
+            </div>
+            <nav class="header-nav">
+                <a class="nav-link" href="index.html">Dashboard</a>
+                <a class="nav-link active" href="evaluations.html">Evaluations</a>
+                <a class="nav-link" href="about.html">About</a>
+            </nav>
+        </div>
+    </header>
+
+    <main>
+        <h2 class="section-title">Model Evaluation</h2>
+        <p class="eval-subtitle">Forecast performance across states and reference dates. Lower scores indicate better accuracy.</p>
+
+        <!-- Top section: map + controls/time series -->
+        <div class="card eval-top-card">
+            <div class="eval-top-row">
+                <!-- Map (left, takes most space) -->
+                <div class="eval-map-area">
+                    <div class="eval-map-with-legend">
+                        <div class="eval-map-container">
+                            <svg id="eval-map"></svg>
+                        </div>
+                        <div class="eval-legend-container" id="eval-legend"></div>
+                    </div>
+                </div>
+
+                <!-- Right panel: controls + time series -->
+                <div class="eval-right-panel">
+                    <div class="control-group">
+                        <div class="control-title">Metric <button class="info-btn" data-info="eval-metric" aria-label="Info">i</button></div>
+                        <div class="seg-group eval-metric-control" id="eval-metric-buttons">
+                            <button class="seg-btn eval-metric-btn active" data-metric="es">Energy Score</button>
+                            <button class="seg-btn eval-metric-btn" data-metric="wis">WIS</button>
+                        </div>
+                    </div>
+                    <div class="control-group">
+                        <div class="control-title">Scale <button class="info-btn" data-info="eval-scale" aria-label="Info">i</button></div>
+                        <div class="seg-group eval-norm-control" id="eval-norm-buttons">
+                            <button class="seg-btn eval-norm-btn active" data-norm="normalized">Normalized</button>
+                            <button class="seg-btn eval-norm-btn" data-norm="raw">Raw</button>
+                            <button class="seg-btn eval-norm-btn" data-norm="relative">Relative</button>
+                        </div>
+                    </div>
+                    <div class="control-group">
+                        <div class="control-title">Aggregation <button class="info-btn" data-info="eval-agg" aria-label="Info">i</button></div>
+                        <div class="seg-group eval-agg-control" id="eval-agg-buttons">
+                            <button class="seg-btn eval-agg-btn" data-agg="season">Full Season</button>
+                            <button class="seg-btn eval-agg-btn" data-agg="last2">Last 2 Wk</button>
+                            <button class="seg-btn eval-agg-btn active" data-agg="last4">Last 4 Wk</button>
+                        </div>
+                    </div>
+                    <div class="control-group">
+                        <div class="control-title">Reference Date</div>
+                        <select id="eval-refdate-select" class="eval-select"></select>
+                    </div>
+                    <!-- Time series chart (below controls) -->
+                    <div class="eval-hover-chart" id="eval-hover-chart">
+                        <svg id="eval-ts-chart"></svg>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Trajectory section -->
+        <hr class="section-divider">
+        <h2 class="section-title">Trajectory Evaluation</h2>
+        <p class="eval-subtitle">Individual trajectories colored by energy score components</p>
+
+        <div class="card eval-traj-card">
+            <div class="eval-traj-controls">
+                <label class="traj-label traj-label-location">
+                    Location
+                    <select id="eval-traj-location" class="traj-select traj-select-location"></select>
+                </label>
+                <label class="traj-label">
+                    Reference Date
+                    <select id="eval-traj-refdate" class="traj-select"></select>
+                </label>
+                <div class="traj-controls-row">
+                    <label class="traj-label traj-label-colorby">
+                        Color By
+                        <div class="seg-group eval-color-control" id="eval-color-buttons">
+                            <button class="seg-btn eval-color-btn active" data-color="obs_fit">Fit to Data</button>
+                            <button class="seg-btn eval-color-btn" data-color="diversity">Ensemble Diversity</button>
+                        </div>
+                    </label>
+                    <label class="traj-label">
+                        Baseline
+                        <div class="seg-group eval-baseline-control" id="eval-baseline-buttons">
+                            <button class="seg-btn eval-baseline-btn active" data-show="off">Off</button>
+                            <button class="seg-btn eval-baseline-btn" data-show="on">On</button>
+                        </div>
+                    </label>
+                </div>
+            </div>
+            <div class="eval-traj-chart-container">
+                <svg id="eval-traj-chart"></svg>
+            </div>
+            <div class="eval-traj-legend" id="eval-traj-legend"></div>
+        </div>
+    </main>
+
+    <footer class="funding-footer">
+        This work was supported by xxxx
+    </footer>
+
+    <!-- Tooltip -->
+    <div class="tooltip" id="eval-tooltip"></div>
+
+    <script src="js/tour.js"></script>
+    <script src="js/evaluations.js"></script>
+</body>
+</html>

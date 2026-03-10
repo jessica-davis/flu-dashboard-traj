@@ -101,18 +101,29 @@ h1 {
     color: #fff;
 }
 
-.about-link {
+.header-nav {
+    display: flex;
+    gap: 20px;
+    align-items: center;
+    padding-top: 7px;
+}
+
+.nav-link {
     font-family: "Helvetica Neue", Arial, sans-serif;
     font-size: 15px;
     font-weight: 500;
     color: #555;
     text-decoration: none;
-    padding: 7px 0;
     transition: color 0.15s ease;
 }
 
-.about-link:hover {
+.nav-link:hover {
     color: #1a1a1a;
+}
+
+.nav-link.active {
+    color: #1a1a1a;
+    font-weight: 600;
 }
 
 /* --- Tab Bar --- */
@@ -1299,6 +1310,7 @@ h1 {
     font-weight: 600;
 }
 
+<<<<<<< Updated upstream
 .tour-popup-wide {
     max-width: 420px;
     width: 420px;
@@ -1407,3 +1419,425 @@ h1 {
     font-weight: 500;
     white-space: nowrap;
 }
+=======
+/* =============================================
+   Evaluations Page
+   ============================================= */
+
+.eval-title-row {
+    display: flex;
+    align-items: baseline;
+    gap: 12px;
+}
+
+.eval-info-btn {
+    font-family: "Helvetica Neue", Arial, sans-serif;
+    font-size: 12px;
+    font-weight: 500;
+    padding: 4px 12px;
+    border: 1px solid #ccc;
+    border-radius: 4px;
+    background: #fff;
+    color: #555;
+    cursor: pointer;
+    transition: all 0.15s ease;
+    white-space: nowrap;
+}
+
+.eval-info-btn:hover {
+    background: #f0f0f0;
+    color: #1a1a1a;
+    border-color: #999;
+}
+
+/* --- Energy Score modal --- */
+
+.eval-modal-overlay {
+    display: none;
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    background: rgba(0, 0, 0, 0.4);
+    z-index: 1000;
+    justify-content: center;
+    align-items: center;
+}
+
+.eval-modal-overlay.active {
+    display: flex;
+}
+
+.eval-modal {
+    background: #fff;
+    border-radius: 8px;
+    padding: 32px 36px;
+    max-width: 600px;
+    width: 90%;
+    max-height: 80vh;
+    overflow-y: auto;
+    position: relative;
+    box-shadow: 0 8px 32px rgba(0, 0, 0, 0.15);
+    font-family: "Helvetica Neue", Arial, sans-serif;
+    font-size: 14px;
+    color: #333;
+    line-height: 1.6;
+}
+
+.eval-modal h3 {
+    font-size: 20px;
+    font-weight: 700;
+    color: #1a1a1a;
+    margin-bottom: 12px;
+}
+
+.eval-modal p {
+    margin-bottom: 12px;
+}
+
+.eval-modal ul {
+    margin: 0 0 12px 20px;
+}
+
+.eval-modal li {
+    margin-bottom: 6px;
+}
+
+.eval-modal-close {
+    position: absolute;
+    top: 12px;
+    right: 16px;
+    background: none;
+    border: none;
+    font-size: 24px;
+    color: #999;
+    cursor: pointer;
+    line-height: 1;
+    padding: 4px;
+}
+
+.eval-modal-close:hover {
+    color: #333;
+}
+
+.eval-modal-formula {
+    background: #f8f8f8;
+    border: 1px solid #e8e8e8;
+    border-radius: 4px;
+    padding: 16px 20px;
+    margin: 16px 0;
+    font-size: 16px;
+    text-align: center;
+    font-family: "Georgia", "Times New Roman", serif;
+    font-style: italic;
+    letter-spacing: 0.5px;
+}
+
+.eval-modal-formula .frac {
+    display: inline-block;
+    text-align: center;
+    vertical-align: middle;
+    margin: 0 2px;
+}
+
+.eval-modal-formula .frac sup,
+.eval-modal-formula .frac sub {
+    display: block;
+    font-size: 0.7em;
+    line-height: 1.1;
+}
+
+.eval-modal-formula .frac .frac-bar {
+    display: block;
+    height: 1px;
+    background: #333;
+    margin: 1px 0;
+}
+
+.eval-modal-cite {
+    font-size: 12px;
+    color: #888;
+    border-top: 1px solid #eee;
+    padding-top: 12px;
+    margin-top: 16px;
+}
+
+.eval-modal-cite a {
+    color: #3D5A80;
+}
+
+.eval-subtitle {
+    font-family: "Helvetica Neue", Arial, sans-serif;
+    font-size: 14px;
+    color: #666;
+    margin-bottom: 16px;
+    line-height: 1.5;
+}
+
+/* --- Top section: map + controls/time series --- */
+
+.eval-top-card {
+    padding: 16px;
+}
+
+.eval-top-row {
+    display: flex;
+    gap: 16px;
+    align-items: flex-start;
+}
+
+.eval-right-panel {
+    width: 300px;
+    flex-shrink: 0;
+    display: flex;
+    flex-direction: column;
+    gap: 14px;
+}
+
+.eval-right-panel .control-group {
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+}
+
+.eval-right-panel .control-title .info-btn {
+    position: static;
+    display: inline-flex;
+    width: 16px;
+    height: 16px;
+    font-size: 10px;
+    margin-left: 4px;
+    vertical-align: middle;
+}
+
+.eval-metric-control,
+.eval-norm-control,
+.eval-agg-control {
+    border: 1px solid #ccc;
+    border-radius: 5px;
+    display: flex;
+    flex-direction: row;
+}
+
+.eval-metric-control .seg-btn,
+.eval-norm-control .seg-btn,
+.eval-agg-control .seg-btn {
+    padding: 5px 10px;
+    font-family: "Helvetica Neue", Arial, sans-serif;
+    font-size: 12px;
+    font-weight: 500;
+    color: #555;
+    background: #fff;
+    border: none;
+    cursor: pointer;
+    transition: all 0.12s ease;
+    border-right: 1px solid #e8e8e8;
+    text-align: center;
+    flex: 1;
+}
+
+.eval-metric-control .seg-btn:last-child,
+.eval-norm-control .seg-btn:last-child,
+.eval-agg-control .seg-btn:last-child {
+    border-right: none;
+}
+
+.eval-metric-control .seg-btn.active,
+.eval-norm-control .seg-btn.active,
+.eval-agg-control .seg-btn.active {
+    background: #f0f0f0;
+    color: #1a1a1a;
+    font-weight: 600;
+}
+
+.eval-select {
+    font-family: "Helvetica Neue", Arial, sans-serif;
+    font-size: 12px;
+    padding: 5px 8px;
+    border: 1px solid #ccc;
+    border-radius: 4px;
+    background: #fff;
+    color: #333;
+    width: 100%;
+    cursor: pointer;
+}
+
+.eval-map-summary {
+    font-family: "Helvetica Neue", Arial, sans-serif;
+    font-size: 12px;
+    color: #666;
+    line-height: 1.5;
+    margin-top: 4px;
+}
+
+/* --- Map area --- */
+
+.eval-map-area {
+    flex: 1;
+    min-width: 0;
+}
+
+.eval-map-with-legend {
+    display: flex;
+    align-items: flex-start;
+    gap: 4px;
+}
+
+.eval-map-container {
+    flex: 1;
+    min-width: 0;
+}
+
+.eval-map-container svg {
+    width: 100%;
+    height: auto;
+}
+
+.eval-legend-container {
+    flex-shrink: 0;
+}
+
+/* --- Hover time series chart --- */
+
+.eval-hover-chart {
+    width: 100%;
+    margin-top: 4px;
+}
+
+.eval-hover-chart svg {
+    width: 100%;
+    height: auto;
+}
+
+/* --- Trajectory section --- */
+
+.eval-traj-card {
+    padding: 16px;
+}
+
+.eval-traj-controls {
+    display: flex;
+    gap: 20px;
+    align-items: flex-end;
+    margin-bottom: 12px;
+    flex-wrap: wrap;
+}
+
+.traj-controls-row {
+    display: flex;
+    gap: 16px;
+    align-items: flex-end;
+}
+
+.eval-traj-controls .traj-label {
+    font-family: "Helvetica Neue", Arial, sans-serif;
+    font-size: 11px;
+    font-weight: 600;
+    text-transform: uppercase;
+    letter-spacing: 0.4px;
+    color: #999;
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+}
+
+.eval-traj-controls .traj-select {
+    font-family: "Helvetica Neue", Arial, sans-serif;
+    font-size: 14px;
+    padding: 5px 8px;
+    border: 1px solid #ccc;
+    border-radius: 4px;
+    background: #fff;
+    color: #333;
+}
+
+.eval-traj-controls .traj-select-location {
+    font-size: 15px;
+    min-width: 160px;
+}
+
+.traj-label-colorby {
+    flex-direction: row !important;
+    align-items: center;
+    gap: 8px !important;
+}
+
+.eval-color-control {
+    border: 1px solid #ccc;
+    border-radius: 5px;
+    display: flex;
+}
+
+.eval-color-control .seg-btn {
+    padding: 5px 12px;
+    font-family: "Helvetica Neue", Arial, sans-serif;
+    font-size: 12px;
+    font-weight: 500;
+    color: #555;
+    background: #fff;
+    border: none;
+    cursor: pointer;
+    transition: all 0.12s ease;
+    border-right: 1px solid #ccc;
+}
+
+.eval-color-control .seg-btn:last-child {
+    border-right: none;
+}
+
+.eval-color-control .seg-btn.active {
+    background: #f0f0f0;
+    color: #1a1a1a;
+    font-weight: 600;
+}
+
+.eval-baseline-control {
+    border: 1px solid #ccc;
+    border-radius: 5px;
+    display: flex;
+}
+
+.eval-baseline-control .seg-btn {
+    padding: 5px 12px;
+    font-family: "Helvetica Neue", Arial, sans-serif;
+    font-size: 12px;
+    font-weight: 500;
+    color: #555;
+    background: #fff;
+    border: none;
+    cursor: pointer;
+    transition: all 0.12s ease;
+    border-right: 1px solid #ccc;
+}
+
+.eval-baseline-control .seg-btn:last-child {
+    border-right: none;
+}
+
+.eval-baseline-control .seg-btn.active {
+    background: #f0f0f0;
+    color: #1a1a1a;
+    font-weight: 600;
+}
+
+.eval-traj-chart-container {
+    width: 100%;
+}
+
+.eval-traj-chart-container svg {
+    width: 100%;
+    height: auto;
+}
+
+.eval-traj-legend {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 8px;
+    align-items: center;
+    padding: 8px 0 0;
+    font-family: "Helvetica Neue", Arial, sans-serif;
+    font-size: 12px;
+    color: #666;
+}
+>>>>>>> Stashed changes
