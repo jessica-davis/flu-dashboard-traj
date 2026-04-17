@@ -10,8 +10,8 @@ from pathlib import Path
 N_SAMPLES = 500
 HORIZONS = [0, 1, 2, 3]
 BASE_URL = "https://raw.githubusercontent.com/cdcepi/FluSight-forecast-hub/main/model-output/FluSight-baseline"
-SCORES_DIR = Path(__file__).resolve().parent.parent.parent / "epystrain-trajectory-analytics" / "data" / "scores"
-CODEBOOK = Path(__file__).resolve().parent.parent.parent / "epystrain-trajectory-analytics" / "data" / "location_codebook.csv"
+SCORES_DIR = Path(__file__).resolve().parent.parent / "data" / "scores"
+CODEBOOK = Path(__file__).resolve().parent.parent / "data" / "location_codebook.csv"
 
 # ── Vectorized energy score ──────────────────────────────────────────────────
 def energyscore_fast(X, y):

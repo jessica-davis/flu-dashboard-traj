@@ -1,0 +1,48 @@
+name: Score new trajectories
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - "raw/multistrain_retrospective_trajectories/**"
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+jobs:
+  score:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+
+      - name: Install dependencies
+        run: pip install numpy pandas pyarrow requests matplotlib geopandas
+
+      - name: Compute scores
+        run: python scripts/compute_all_scores.py
+
+      - name: Convert scores to dashboard JSON
+        run: python scripts/convert_scores.py
+
+      - name: Regenerate figures
+        run: |
+          python scripts/plot_wis_map_and_horizons.py
+          python scripts/plot_wis_timeseries.py
+          python scripts/plot_evaluation_overview.py
+
+      - name: Commit regenerated outputs
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add data/scores docs/data/evaluation_scores.json figures/
+          if git diff --cached --quiet; then
+            echo "No changes to commit."
+          else
+            git commit -m "auto: rescore after new trajectory file"
+            git push
+          fi

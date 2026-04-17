@@ -4,7 +4,7 @@ import pandas as pd
 import json
 from pathlib import Path
 
-SCORES_DIR = Path(__file__).resolve().parent.parent.parent / "epystrain-trajectory-analytics" / "data" / "scores"
+SCORES_DIR = Path(__file__).resolve().parent.parent / "data" / "scores"
 OUTPUT = Path(__file__).resolve().parent.parent / "docs" / "data" / "evaluation_scores.json"
 
 es = pd.read_csv(SCORES_DIR / "epystrain_energyscore_dat.csv")

@@ -8,8 +8,8 @@ from pathlib import Path
 
 HORIZONS = [0, 1, 2, 3]
 BASE_URL = "https://raw.githubusercontent.com/cdcepi/FluSight-forecast-hub/main/model-output/FluSight-baseline"
-SCORES_DIR = Path(__file__).resolve().parent.parent.parent / "epystrain-trajectory-analytics" / "data" / "scores"
-CODEBOOK = Path(__file__).resolve().parent.parent.parent / "epystrain-trajectory-analytics" / "data" / "location_codebook.csv"
+SCORES_DIR = Path(__file__).resolve().parent.parent / "data" / "scores"
+CODEBOOK = Path(__file__).resolve().parent.parent / "data" / "location_codebook.csv"
 
 # Quantile levels matching the model's WIS computation
 QUANTILES = [0.01, 0.025, 0.05, 0.1, 0.15, 0.2, 0.25, 0.3, 0.35, 0.4, 0.45, 0.5,

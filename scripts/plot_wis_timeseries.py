@@ -14,7 +14,7 @@ ROOT = Path(__file__).resolve().parent.parent
 FIGURES = ROOT / "figures"
 FIGURES.mkdir(exist_ok=True)
 TRAJ_DIR = ROOT / "raw" / "multistrain_retrospective_trajectories"
-CODEBOOK = ROOT.parent / "epystrain-trajectory-analytics" / "data" / "location_codebook.csv"
+CODEBOOK = ROOT / "data" / "location_codebook.csv"
 SURV_URL = "https://raw.githubusercontent.com/cdcepi/FluSight-forecast-hub/main/target-data/target-hospital-admissions.csv"
 BASE_URL = "https://raw.githubusercontent.com/cdcepi/FluSight-forecast-hub/main/model-output/FluSight-baseline"
 

@@ -8,9 +8,9 @@ from collections import defaultdict
 HORIZONS = [0, 1, 2, 3]
 QUANTILE_LEVELS = [0.05, 0.25, 0.5, 0.75, 0.95]
 BASE_URL = "https://raw.githubusercontent.com/cdcepi/FluSight-forecast-hub/main/model-output/FluSight-baseline"
-SCORES_DIR = Path(__file__).resolve().parent.parent.parent / "epystrain-trajectory-analytics" / "data" / "scores"
+SCORES_DIR = Path(__file__).resolve().parent.parent / "data" / "scores"
 OUTPUT_DIR = Path(__file__).resolve().parent.parent / "docs" / "data" / "baseline_quantiles"
-CODEBOOK = Path(__file__).resolve().parent.parent.parent / "epystrain-trajectory-analytics" / "data" / "location_codebook.csv"
+CODEBOOK = Path(__file__).resolve().parent.parent / "data" / "location_codebook.csv"
 
 # Get reference dates from existing scores
 existing = pd.read_csv(SCORES_DIR / "epystrain_energyscore_dat.csv")

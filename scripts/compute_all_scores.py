@@ -1,7 +1,7 @@
 """Compute Energy Score and WIS for both the EpyStrain model and FluSight-Baseline,
 using ALL available trajectory parquet files.
 
-Produces 4 CSV files in the epystrain-trajectory-analytics scores directory:
+Produces 4 CSV files in data/scores/:
   - epystrain_energyscore_dat.csv
   - epystrain_WIS_dat.csv
   - baseline_energyscore_dat.csv
@@ -29,8 +29,8 @@ from pathlib import Path
 
 ROOT = Path(__file__).resolve().parent.parent
 TRAJ_DIR = ROOT / "raw" / "multistrain_retrospective_trajectories"
-SCORES_DIR = ROOT.parent / "epystrain-trajectory-analytics" / "data" / "scores"
-CODEBOOK = ROOT.parent / "epystrain-trajectory-analytics" / "data" / "location_codebook.csv"
+SCORES_DIR = ROOT / "data" / "scores"
+CODEBOOK = ROOT / "data" / "location_codebook.csv"
 SURV_URL = "https://raw.githubusercontent.com/cdcepi/FluSight-forecast-hub/main/target-data/target-hospital-admissions.csv"
 BASE_URL = "https://raw.githubusercontent.com/cdcepi/FluSight-forecast-hub/main/model-output/FluSight-baseline"
 
