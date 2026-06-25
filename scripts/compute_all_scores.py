@@ -28,7 +28,7 @@ import time
 from pathlib import Path
 
 ROOT = Path(__file__).resolve().parent.parent
-TRAJ_DIR = ROOT / "raw" / "multistrain_retrospective_trajectories"
+TRAJ_DIR = ROOT / "raw" / "retro20260615_trajectories"
 SCORES_DIR = ROOT / "data" / "scores"
 CODEBOOK = ROOT / "data" / "location_codebook.csv"
 SURV_URL = "https://raw.githubusercontent.com/cdcepi/FluSight-forecast-hub/main/target-data/target-hospital-admissions.csv"
@@ -78,7 +78,19 @@ def wis_from_quantile_matrix(Q, y):
 
 # ── Load location codebook ──────────────────────────────────────────────────
 loc_df = pd.read_csv(CODEBOOK)[["location_code", "location_name", "location_name_epydemix"]]
-epydemix_to_code = dict(zip(loc_df["location_name_epydemix"], loc_df["location_code"]))
+
+
+def _norm_loc(name):
+    """Collapse repeated underscores so both single- (United_States_Alabama)
+    and double-underscore (United_States__Alabama) trajectory naming match the
+    codebook's single-underscore keys."""
+    return "_".join(part for part in str(name).split("_") if part)
+
+
+epydemix_to_code = {
+    _norm_loc(k): v
+    for k, v in zip(loc_df["location_name_epydemix"], loc_df["location_code"])
+}
 code_to_name = dict(zip(loc_df["location_code"], loc_df["location_name"]))
 
 # ── Load surveillance data ──────────────────────────────────────────────────
@@ -110,7 +122,7 @@ for idx, ref_date_str in enumerate(ref_dates):
 
     n_locs = 0
     for loc_epydemix in sorted(traj["location"].unique()):
-        loc_code = epydemix_to_code.get(loc_epydemix)
+        loc_code = epydemix_to_code.get(_norm_loc(loc_epydemix))
         if loc_code is None:
             continue
 
@@ -147,7 +159,7 @@ for idx, ref_date_str in enumerate(ref_dates):
             h_data = loc_traj[loc_traj["horizon"] == h].set_index("sample_id")
             for s_idx, sid in enumerate(sample_ids):
                 if sid in h_data.index:
-                    X[s_idx, h_idx] = h_data.loc[sid, "target_total"]
+                    X[s_idx, h_idx] = h_data.loc[sid, "target_baseline_k5"]
 
         # Energy Score
         ES = energyscore(X, y)

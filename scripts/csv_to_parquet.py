@@ -14,7 +14,7 @@ import shutil
 from pathlib import Path
 
 BASE_DIR = Path(__file__).resolve().parent.parent
-RAW_DIR = BASE_DIR / "raw" / "multistrain_retrospective_trajectories"
+RAW_DIR = BASE_DIR / "raw" / "retro20260615_trajectories"
 OUT_DIR = BASE_DIR / "data" / "processed" / "trajectories"
 LOCATIONS_FILE = BASE_DIR / "data" / "processed" / "locations.parquet"
 
@@ -28,7 +28,7 @@ def build_location_mapping(locations_df):
         if fips == "US":
             epydemix_name = "United_States"
         else:
-            epydemix_name = "United_States_" + name.replace(" ", "_")
+            epydemix_name = "United_States__" + name.replace(" ", "_")
         mapping[epydemix_name] = {"location_id": idx, "fips": fips}
     return mapping
 
@@ -66,7 +66,7 @@ def process_file(filepath, loc_map):
                 "run_id": loc_df["sample_id"].values,
                 "location_name_epydemix": location,
                 "date": loc_df["date"].values,
-                "value": loc_df["target_total"].values,
+                "value": loc_df["target_baseline_k5"].values,
                 "epiweek": loc_df["epiweek"].values,
                 "reference_date": loc_df["reference_date"].values,
                 "horizon": loc_df["horizon"].values,

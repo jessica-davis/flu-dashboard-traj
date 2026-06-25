@@ -14,7 +14,12 @@ When a new trajectory parquet is ready:
 
 All scripts run from the repo root. **Run all 5 steps in order every time you add new data.**
 
-If you have SSL issues, prefix your session with:
+First, activate the project virtualenv. The scripts require the package versions pinned in `.venv` (e.g. pandas 3.x) — running them with a system or conda `python` will fail:
+```bash
+source .venv/bin/activate
+```
+
+If you have SSL issues, also prefix your session with:
 ```bash
 export SSL_CERT_FILE=$(python -c "import certifi; print(certifi.where())")
 ```
@@ -79,6 +84,7 @@ python scripts/plot_evaluation_overview.py    # figures/evaluation_overview_boxp
 ## Quick reference — copy/paste block
 
 ```bash
+source .venv/bin/activate
 export SSL_CERT_FILE=$(python -c "import certifi; print(certifi.where())")
 python scripts/csv_to_parquet.py
 python scripts/preprocess.py
