@@ -1,4 +1,4 @@
-// Semi-circular gauge components with animated needle
+// Semi-circular gauge + NYT-style bar chart + admissions distribution
 
 const GAUGE_WIDTH = 240;
 const GAUGE_HEIGHT = 125;
@@ -6,15 +6,21 @@ const GAUGE_RADIUS = 80;
 const GAUGE_INNER_RADIUS = 48;
 const GAUGE_CENTER_Y = GAUGE_HEIGHT - 16;
 
+let _currentGaugeType = null; // track to avoid unnecessary recreation
+
 function initGauges() {
-    createGauge("#gauge-trend", "trend");
-    createGauge("#gauge-activity", "activity");
+    // Create initial gauge based on default tab
+    const type = AppState.currentTab === "activity" ? "activity" : "trend";
+    createGauge("#gauge-active", type);
+    _currentGaugeType = type;
 }
 
 function createGauge(selector, type) {
     const svg = d3.select(selector)
         .attr("width", GAUGE_WIDTH)
         .attr("height", GAUGE_HEIGHT);
+
+    svg.selectAll("*").remove();
 
     const g = svg.append("g")
         .attr("class", "gauge-group")
@@ -29,7 +35,6 @@ function createGauge(selector, type) {
 
     const segmentAngle = Math.PI / categories.length;
 
-    // Draw arc segments
     categories.forEach((cat, i) => {
         const startAngle = -Math.PI / 2 + i * segmentAngle;
         const endAngle = startAngle + segmentAngle;
@@ -42,7 +47,6 @@ function createGauge(selector, type) {
             .attr("stroke-width", 0.8);
     });
 
-    // Abbreviated labels
     const shortLabels = type === "trend"
         ? ["Lg\u2193", "Dec", "Stbl", "Inc", "Lg\u2191"]
         : ["Low", "Med", "High", "V.High"];
@@ -63,7 +67,6 @@ function createGauge(selector, type) {
             .text(shortLabels[i]);
     });
 
-    // Needle
     g.append("line")
         .attr("class", "gauge-needle")
         .attr("x1", 0).attr("y1", 4)
@@ -72,7 +75,6 @@ function createGauge(selector, type) {
         .attr("stroke-width", 2.5)
         .attr("stroke-linecap", "round");
 
-    // Center circle
     g.append("circle")
         .attr("cx", 0).attr("cy", 0)
         .attr("r", 5)
@@ -80,10 +82,35 @@ function createGauge(selector, type) {
 }
 
 function updateGauges() {
-    updateSingleGauge("#gauge-trend", "trend");
-    updateSingleGauge("#gauge-activity", "activity");
+    const tab = AppState.currentTab;
+
+    if (tab === "admissions") {
+        // Hide gauge and bar chart, show admissions distribution
+        d3.select("#active-gauge-wrapper").style("display", "none");
+        d3.select("#us-bar-chart").style("display", "none");
+        d3.select("#admissions-dist").style("display", "block");
+        updateAdmissionsDist();
+    } else {
+        // Show gauge and bar chart, hide admissions distribution
+        d3.select("#active-gauge-wrapper").style("display", "block");
+        d3.select("#us-bar-chart").style("display", "block");
+        d3.select("#admissions-dist").style("display", "none");
+
+        const gaugeType = tab === "activity" ? "activity" : "trend";
+        const title = tab === "activity" ? "Activity Level: United States" : "Trend Forecast: United States";
+
+        // Recreate gauge if type changed
+        if (_currentGaugeType !== gaugeType) {
+            createGauge("#gauge-active", gaugeType);
+            _currentGaugeType = gaugeType;
+        }
+
+        d3.select("#active-gauge-title").text(title);
+        updateSingleGauge("#gauge-active", gaugeType);
+        updateUSBarChart();
+    }
+
     updateOverviewText();
-    updateProbabilityLabels();
 }
 
 function updateSingleGauge(selector, type) {
@@ -93,7 +120,16 @@ function updateSingleGauge(selector, type) {
     if (!entry) return;
 
     const categories = type === "trend" ? TREND_ORDER : ACTIVITY_ORDER;
-    const probs = type === "trend" ? entry.trend_probs : entry.activity_probs;
+    let probs;
+    if (type === "trend") {
+        probs = entry.trend_probs;
+    } else {
+        // Compute activity probs from trajectories using correct thresholds
+        const actProbs = (typeof usTrajData !== "undefined" && usTrajData)
+            ? computeActivityProbsFromTrajs(usTrajData, refDate, horizon, "US")
+            : null;
+        probs = actProbs || entry.activity_probs;
+    }
 
     const segmentAngle = Math.PI / categories.length;
     let weightedAngle = 0;
@@ -122,38 +158,248 @@ function updateSingleGauge(selector, type) {
         .attr("y1", ny1);
 }
 
-// --- Probability labels below each gauge ---
+// --- NYT-style horizontal bar chart for US probabilities ---
 
-function updateProbabilityLabels() {
+function updateUSBarChart() {
+    const container = d3.select("#us-bar-chart");
+    container.selectAll("*").remove();
+
+    const tab = AppState.currentTab;
+    if (tab === "admissions") return;
+
     const refDate = AppState.currentRefDate;
     const horizon = AppState.currentHorizon;
     const entry = dashboardData.data[refDate]?.["US"]?.[String(horizon)];
     if (!entry) return;
 
-    renderGaugeLabels("gauge-trend-labels", "trend", entry);
-    renderGaugeLabels("gauge-activity-labels", "activity", entry);
-}
-
-function renderGaugeLabels(containerId, type, entry) {
-    const container = d3.select(`#${containerId}`);
-    container.selectAll("*").remove();
-
-    const probs = type === "trend" ? entry.trend_probs : entry.activity_probs;
+    const type = tab === "activity" ? "activity" : "trend";
+    let probs;
+    if (type === "trend") {
+        probs = entry.trend_probs;
+    } else {
+        const actProbs = (typeof usTrajData !== "undefined" && usTrajData)
+            ? computeActivityProbsFromTrajs(usTrajData, refDate, horizon, "US")
+            : null;
+        probs = actProbs || entry.activity_probs;
+    }
+    const order = type === "trend" ? TREND_ORDER : ACTIVITY_ORDER;
     const colors = type === "trend" ? TREND_COLORS : ACTIVITY_COLORS;
     const labels = type === "trend" ? TREND_LABELS : ACTIVITY_LABELS;
 
-    // Sort by probability descending, take top 2
-    const sorted = Object.entries(probs)
-        .sort((a, b) => b[1] - a[1])
-        .slice(0, 2);
+    const estimate = AppState.currentEstimate;
+    let selectedCat;
+    if (type === "trend") {
+        selectedCat = estimate === "most_likely" ? entry.trend_most_likely
+            : estimate === "lower" ? entry.trend_lower : entry.trend_upper;
+    } else {
+        // Use threshold-based classification
+        let raw;
+        if (estimate === "most_likely") raw = entry.median_value;
+        else if (estimate === "lower") raw = entry.p10_value;
+        else raw = entry.p90_value;
+        selectedCat = classifyActivity(raw, "US") || entry.activity_most_likely;
+    }
 
-    sorted.forEach(([cat, prob], i) => {
-        const span = container.append("span")
-            .attr("class", "prob-label")
-            .style("color", colors[cat])
-            .style("font-size", i === 0 ? "14px" : "12px")
-            .style("font-weight", i === 0 ? "700" : "600");
-        span.text(`${labels[cat]} ${Math.round(prob * 100)}%`);
+    const chartW = 320;
+    const rowH = 28;
+    const labelW = 100;
+    const barMaxW = 170;
+    const pctW = 50;
+    const chartH = order.length * rowH + 8;
+
+    const svg = container.append("svg")
+        .attr("width", chartW)
+        .attr("height", chartH)
+        .style("overflow", "visible");
+
+    // Title
+    svg.append("text")
+        .attr("x", 0)
+        .attr("y", 10)
+        .attr("font-family", "Helvetica Neue, Arial, sans-serif")
+        .attr("font-size", "10px")
+        .attr("font-weight", "600")
+        .attr("text-transform", "uppercase")
+        .attr("letter-spacing", "0.5px")
+        .attr("fill", "#999")
+        .text("UNCERTAINTY DISTRIBUTION");
+
+    order.forEach((cat, i) => {
+        const y = i * rowH + 22;
+        const prob = probs[cat] || 0;
+        const pctText = prob < 0.01 ? (prob > 0 ? "<1%" : "0%") : `${Math.round(prob * 100)}%`;
+        const barW = Math.max(0, prob * barMaxW);
+        const isSelected = cat === selectedCat;
+        const needsStroke = (cat === "low" || cat === "stable");
+
+        // Category label
+        svg.append("text")
+            .attr("x", labelW - 6)
+            .attr("y", y + rowH / 2 - 2)
+            .attr("text-anchor", "end")
+            .attr("dominant-baseline", "central")
+            .attr("font-family", "Helvetica Neue, Arial, sans-serif")
+            .attr("font-size", "12px")
+            .attr("fill", isSelected ? "#1a1a1a" : "#666")
+            .attr("font-weight", isSelected ? "700" : "400")
+            .text(labels[cat]);
+
+        // Bar
+        if (barW > 0) {
+            svg.append("rect")
+                .attr("x", labelW)
+                .attr("y", y + 2)
+                .attr("width", barW)
+                .attr("height", rowH - 8)
+                .attr("fill", colors[cat])
+                .attr("stroke", isSelected ? "#1a1a1a" : (needsStroke ? "#ccc" : "none"))
+                .attr("stroke-width", isSelected ? 1.5 : 0.5)
+                .attr("rx", 2);
+        }
+
+        // Percentage label
+        svg.append("text")
+            .attr("x", labelW + barW + 6)
+            .attr("y", y + rowH / 2 - 2)
+            .attr("dominant-baseline", "central")
+            .attr("font-family", "Helvetica Neue, Arial, sans-serif")
+            .attr("font-size", "12px")
+            .attr("fill", "#333")
+            .attr("font-weight", "600")
+            .text(pctText);
+    });
+}
+
+// --- Admissions tab: trajectory distribution histogram ---
+
+function updateAdmissionsDist() {
+    const container = d3.select("#admissions-dist");
+    container.selectAll("*").remove();
+
+    if (!usTrajData) return;
+
+    const refDate = AppState.currentRefDate;
+    const horizon = AppState.currentHorizon;
+    const rdData = usTrajData.data[refDate];
+    if (!rdData) return;
+
+    // Find the index for the forecast date at this horizon
+    const forecastEntry = dashboardData.data[refDate]?.["US"]?.[String(horizon)];
+    if (!forecastEntry) return;
+    const forecastDate = forecastEntry.forecast_date;
+    const dateIdx = rdData.dates.indexOf(forecastDate);
+    if (dateIdx < 0) return;
+
+    // Extract values at this horizon from all trajectories
+    const values = rdData.trajectories.map(t => t.values[dateIdx]).filter(v => v != null);
+    if (values.length === 0) return;
+
+    const isPerCap = AppState.admissionsRate === "percapita";
+    const pop = fipsToPopulation["US"];
+    const displayValues = isPerCap && pop ? values.map(v => v / pop * 100000) : values;
+
+    // Bin the values
+    const binner = d3.bin().thresholds(8);
+    const bins = binner(displayValues);
+
+    const maxCount = d3.max(bins, b => b.length);
+    const fmt = isPerCap ? d3.format(",.1f") : d3.format(",.0f");
+    const fmtK = v => {
+        if (!isPerCap && v >= 1000) return d3.format(",.0f")(v / 1000) + "k";
+        return fmt(v);
+    };
+
+    // Compute forecast week date range for title
+    const fcDt = new Date(forecastDate + "T00:00:00");
+    const weekStart = new Date(fcDt);
+    weekStart.setDate(weekStart.getDate() - 6);
+    const monthsFmt = ["Jan", "Feb", "Mar", "Apr", "May", "Jun",
+        "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"];
+    const weekLabel = `${monthsFmt[weekStart.getMonth()]} ${weekStart.getDate()}, ${weekStart.getFullYear()} to ${monthsFmt[fcDt.getMonth()]} ${fcDt.getDate()}, ${fcDt.getFullYear()}`;
+    const unitLabel = isPerCap ? "per 100k" : "";
+
+    const chartW = 320;
+    const rowH = 24;
+    const labelW = 80;
+    const barMaxW = 180;
+    const chartH = bins.length * rowH + 46;
+
+    const svg = container.append("svg")
+        .attr("width", chartW)
+        .attr("height", chartH)
+        .style("overflow", "visible");
+
+    // Title line 1
+    svg.append("text")
+        .attr("x", 0)
+        .attr("y", 10)
+        .attr("font-family", "Helvetica Neue, Arial, sans-serif")
+        .attr("font-size", "10px")
+        .attr("font-weight", "600")
+        .attr("fill", "#555")
+        .text("Weekly Hospitalizations Forecast: United States");
+
+    // Title line 2: week dates
+    svg.append("text")
+        .attr("x", 0)
+        .attr("y", 23)
+        .attr("font-family", "Helvetica Neue, Arial, sans-serif")
+        .attr("font-size", "9px")
+        .attr("font-weight", "400")
+        .attr("fill", "#888")
+        .text(`Week of ${weekLabel}` + (unitLabel ? ` (${unitLabel})` : ""));
+
+    // Median value marker
+    const medianVal = isPerCap && pop
+        ? forecastEntry.median_value / pop * 100000
+        : forecastEntry.median_value;
+
+    // Color scale for bins
+    const scale = getAdmissionsColorScale();
+
+    bins.forEach((bin, i) => {
+        const y = i * rowH + 36;
+        const pct = bin.length / values.length;
+        const barW = Math.max(0, (bin.length / maxCount) * barMaxW);
+        const pctText = pct < 0.01 ? (pct > 0 ? "<1%" : "") : `${Math.round(pct * 100)}%`;
+
+        // Bin range label
+        svg.append("text")
+            .attr("x", labelW - 6)
+            .attr("y", y + rowH / 2 - 2)
+            .attr("text-anchor", "end")
+            .attr("dominant-baseline", "central")
+            .attr("font-family", "Helvetica Neue, Arial, sans-serif")
+            .attr("font-size", "11px")
+            .attr("fill", "#666")
+            .text(`${fmtK(bin.x0)}\u2013${fmtK(bin.x1)}`);
+
+        // Bar colored by admissions scale (use bin midpoint)
+        const midVal = (bin.x0 + bin.x1) / 2;
+        const barColor = isPerCap ? scale(midVal) : scale(midVal);
+
+        if (barW > 0) {
+            svg.append("rect")
+                .attr("x", labelW)
+                .attr("y", y + 2)
+                .attr("width", barW)
+                .attr("height", rowH - 8)
+                .attr("fill", barColor)
+                .attr("stroke", "#ccc")
+                .attr("stroke-width", 0.5)
+                .attr("rx", 2);
+        }
+
+        // Percentage label
+        svg.append("text")
+            .attr("x", labelW + barW + 5)
+            .attr("y", y + rowH / 2 - 2)
+            .attr("dominant-baseline", "central")
+            .attr("font-family", "Helvetica Neue, Arial, sans-serif")
+            .attr("font-size", "11px")
+            .attr("fill", "#333")
+            .attr("font-weight", "600")
+            .text(pctText);
     });
 }
 
@@ -162,62 +408,142 @@ function renderGaugeLabels(containerId, type, entry) {
 function updateOverviewText() {
     const refDate = AppState.currentRefDate;
     const horizon = AppState.currentHorizon;
-
-    // Paragraph 1: Current epiweek, hospitalizations, activity level
-    const h0Entry = dashboardData.data[refDate]?.["US"]?.["0"];
-    if (!h0Entry) return;
+    const tab = AppState.currentTab;
 
     const refDt = new Date(refDate + "T00:00:00");
-    const epiweek = getMMWRWeek(refDt);
-    const hospFormatted = d3.format(",")(Math.round(h0Entry.median_value));
-    const activityLabel = ACTIVITY_LABELS[h0Entry.activity_most_likely];
-
-    const para1 = `For MMWR Week ${epiweek} (${formatLongDate(refDt)}), ` +
-        `there were an estimated <strong>${hospFormatted}</strong> influenza hospitalizations nationally, ` +
-        `with <strong>${activityLabel.toLowerCase()}</strong> activity levels.`;
-
-    d3.select("#overview-primary").html(para1);
-
-    // Paragraph 2: State trend aggregation for selected horizon
     const horizonData = dashboardData.data[refDate];
     if (!horizonData) return;
 
-    let increasing = 0, decreasing = 0, stable = 0;
-    locationsData.forEach(loc => {
-        if (loc.fips === "US") return;
-        const stateEntry = horizonData[loc.fips]?.[String(horizon)];
-        if (!stateEntry) return;
-        const trend = stateEntry.trend_most_likely;
-        if (trend === "increase" || trend === "large_increase") increasing++;
-        else if (trend === "decrease" || trend === "large_decrease") decreasing++;
-        else stable++;
-    });
-
+    // Compute forecast week dates (horizon h maps to refDate + h weeks)
     const targetSat = new Date(refDt);
     targetSat.setDate(targetSat.getDate() + horizon * 7);
     const targetSun = new Date(targetSat);
     targetSun.setDate(targetSun.getDate() - 6);
+
+    // Update forecast context title
+    const titleEl = d3.select("#forecast-context-title");
+    const horizonText = `Wk ${horizon + 1}`;
+    titleEl.html(`National Forecast: Week of ${formatShortDate(targetSun)}\u2013${formatShortDate(targetSat)}<span class="forecast-week-range">${horizonText}</span>`);
+
+    // Overview: narrative summary for US with colored categories
+    const usEntry = horizonData["US"]?.[String(horizon)];
+    if (usEntry) {
+        const trendCat = usEntry.trend_most_likely;
+        const actCat = classifyActivity(usEntry.median_value, "US") || usEntry.activity_most_likely;
+        const hospVal = d3.format(",")(Math.round(usEntry.median_value));
+
+        const actColor = ACTIVITY_TEXT_COLORS[actCat] || ACTIVITY_COLORS[actCat];
+        const trendColor = TREND_TEXT_COLORS[trendCat] || TREND_COLORS[trendCat];
+
+        const trendProb = Math.round((usEntry.trend_probs[trendCat] || 0) * 100);
+        // Compute activity probs from trajectories using correct thresholds
+        const actProbs = (typeof usTrajData !== "undefined" && usTrajData)
+            ? computeActivityProbsFromTrajs(usTrajData, refDate, horizon, "US")
+            : null;
+        const actProb = Math.round(((actProbs || usEntry.activity_probs)[actCat] || 0) * 100);
+
+        // Trend adverb + direction
+        const TREND_ADVERBS = {
+            large_decrease: "largely", decrease: "", stable: "",
+            increase: "", large_increase: "largely"
+        };
+        const TREND_DIRECTIONS = {
+            large_decrease: "decrease", decrease: "decrease",
+            stable: "remain stable", increase: "increase",
+            large_increase: "increase"
+        };
+        const trendAdverb = TREND_ADVERBS[trendCat] || "";
+        const trendDirection = TREND_DIRECTIONS[trendCat] || "remain stable";
+        const trendPhrase = trendAdverb ? `${trendAdverb} ${trendDirection}` : trendDirection;
+
+        // Comparison week: the week ending 7 days before refDate (Sun–Sat)
+        const compSat = new Date(refDt);
+        compSat.setDate(compSat.getDate() - 7);
+        const compSun = new Date(compSat);
+        compSun.setDate(compSun.getDate() - 6);
+        const compWeekStr = `the week of ${formatShortDate(compSun)}\u2013${formatShortDate(compSat)}`;
+
+        d3.select("#overview-primary").html(
+            `Nationally, hospitalizations are forecasted to be at ` +
+            `<strong style="color:${actColor}">${ACTIVITY_LABELS[actCat].toLowerCase()}</strong> ` +
+            `activity <span class="overview-pct">(${actProb}% chance)</span>, ` +
+            `with an estimated <strong>${hospVal}</strong> new weekly hospital admissions. ` +
+            `Compared to ${compWeekStr}, weekly hospitalizations are expected to ` +
+            `<strong style="color:${trendColor}">${trendPhrase}</strong> ` +
+            `<span class="overview-pct">(${trendProb}% chance)</span>.`
+        );
+    }
+
+    // Left-side text: original sentence format
     const dateStr = `${formatShortDate(targetSun)}\u2013${formatShortDate(targetSat)}`;
-    const horizonLabel = horizon === 0 ? "(current week)" : `(+${horizon} week${horizon > 1 ? "s" : ""})`;
+    const horizonLabel = `(Wk ${horizon + 1})`;
+    let para2 = "";
 
-    const para2 = `For the week of ${dateStr} ${horizonLabel}, ` +
-        `<strong>${increasing}</strong> state${increasing !== 1 ? "s" : ""} forecast increasing, ` +
-        `<strong>${decreasing}</strong> decreasing, and <strong>${stable}</strong> stable.`;
+    if (tab === "trend") {
+        const counts = {};
+        TREND_ORDER.forEach(cat => counts[cat] = 0);
+        locationsData.forEach(loc => {
+            if (loc.fips === "US") return;
+            const stateEntry = horizonData[loc.fips]?.[String(horizon)];
+            if (!stateEntry) return;
+            const trend = stateEntry.trend_most_likely;
+            if (counts[trend] !== undefined) counts[trend]++;
+        });
+        const parts = [];
+        TREND_ORDER.forEach(cat => {
+            if (counts[cat] > 0) {
+                const s = counts[cat] !== 1 ? "s" : "";
+                parts.push(`<strong>${counts[cat]}</strong> ${TREND_LABELS[cat].toLowerCase()} state${s}`);
+            }
+        });
+        para2 = `For the week of ${dateStr} ${horizonLabel}, ` + parts.join(", ") + ".";
+    } else if (tab === "activity") {
+        const counts = { low: 0, moderate: 0, high: 0, very_high: 0 };
+        locationsData.forEach(loc => {
+            if (loc.fips === "US") return;
+            const stateEntry = horizonData[loc.fips]?.[String(horizon)];
+            if (!stateEntry) return;
+            // Use threshold-based classification instead of pre-computed category
+            const activity = classifyActivity(stateEntry.median_value, loc.fips) || stateEntry.activity_most_likely;
+            if (counts[activity] !== undefined) counts[activity]++;
+        });
+        const parts = [];
+        ACTIVITY_ORDER.forEach(cat => {
+            if (counts[cat] > 0) {
+                const s = counts[cat] !== 1 ? "s" : "";
+                parts.push(`<strong>${counts[cat]}</strong> ${ACTIVITY_LABELS[cat].toLowerCase()} state${s}`);
+            }
+        });
+        para2 = `For the week of ${dateStr} ${horizonLabel}, ` + parts.join(", ") + ".";
+    } else if (tab === "admissions") {
+        const isPerCap = AppState.admissionsRate === "percapita";
+        const estimate = AppState.currentEstimate;
+        if (usEntry) {
+            let raw;
+            if (estimate === "most_likely") raw = usEntry.median_value;
+            else if (estimate === "lower") raw = usEntry.p10_value;
+            else raw = usEntry.p90_value;
+            const fmt = isPerCap ? d3.format(",.1f") : d3.format(",.0f");
+            const pop = fipsToPopulation["US"];
+            const val = isPerCap && pop ? raw / pop * 100000 : raw;
+            const unit = isPerCap ? "per 100k" : "hospitalizations";
+            para2 = `For the week of ${dateStr} ${horizonLabel}, ` +
+                `an estimated <strong>${fmt(val)}</strong> ${unit} nationally.`;
+        }
+    }
 
-    d3.select("#overview-secondary").html(para2);
+    d3.select("#map-trend-summary").html(para2);
 }
 
 // --- Helper functions ---
 
 function getMMWRWeek(date) {
     const d = new Date(date);
-    // Find the Saturday of this MMWR week
     const day = d.getDay();
     const saturday = new Date(d);
     saturday.setDate(d.getDate() + (6 - day));
     const mmwrYear = saturday.getFullYear();
 
-    // Jan 4 of the MMWR year — find the Sunday on or before it
     const jan4 = new Date(mmwrYear, 0, 4);
     const jan4Day = jan4.getDay();
     const firstSunday = new Date(jan4);

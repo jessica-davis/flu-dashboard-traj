@@ -13,9 +13,13 @@
         <div class="header-row">
             <div>
                 <h1>Influenza Hospitalization Forecast</h1>
-                <p class="subtitle">Weekly forecasts powered by EpyStrain ensemble model</p>
+                <p class="subtitle">Weekly forecasts of the EpyStrain model <span class="last-updated" id="last-updated"></span><button class="most-recent-btn" onclick="jumpToMostRecent()">Most Recent Forecast</button></p>
             </div>
-            <a class="about-link" href="about.html">About</a>
+            <nav class="header-nav">
+                <a class="nav-link active" href="index.html">Dashboard</a>
+                <a class="nav-link" href="evaluations.html">Evaluations</a>
+                <a class="nav-link" href="about.html">About</a>
+            </nav>
         </div>
     </header>
 
@@ -27,35 +31,38 @@
             <button class="tab active" data-tab="trend">Influenza Trend</button>
             <button class="tab" data-tab="activity">Influenza Activity</button>
             <button class="tab" data-tab="admissions">Weekly Hospital Admissions</button>
-            <button class="tour-btn" onclick="startTour()">Guided Tour</button>
+            <div class="tab-bar-actions">
+                <button class="tab-action" onclick="startTour()">Guided Tour</button>
+            </div>
         </div>
         <div class="cards-row">
             <!-- Map card -->
             <div class="card card-map">
-                <div class="legend-container" id="legend"></div>
                 <div class="map-with-controls">
                     <div class="map-left-controls">
                         <div class="control-group">
-                            <div class="control-title">Forecast Week</div>
-                            <div class="seg-group horizon-control" id="date-buttons">
-                                <!-- Populated by JS -->
-                            </div>
-                        </div>
-                        <div class="control-group">
                             <div class="control-title">Uncertainty</div>
                             <div class="seg-group estimate-control" id="estimate-buttons">
-                                <button class="seg-btn estimate-seg active" data-estimate="most_likely">Most Likely</button>
-                                <button class="seg-btn estimate-seg" data-estimate="lower">Lower End</button>
-                                <button class="seg-btn estimate-seg" data-estimate="upper">Upper End</button>
+                                <button class="seg-btn estimate-seg active" data-estimate="most_likely">Most Likely<span class="estimate-desc">Expected forecast</span></button>
+                                <button class="seg-btn estimate-seg" data-estimate="lower">Lower End<span class="estimate-desc">90% chance of more</span></button>
+                                <button class="seg-btn estimate-seg" data-estimate="upper">Upper End<span class="estimate-desc">90% chance of less</span></button>
                             </div>
                         </div>
                         <div class="rate-toggle" id="rate-toggle" style="display:none;">
                             <button class="rate-btn active" data-rate="total">Total</button>
                             <button class="rate-btn" data-rate="percapita">Per 100k</button>
                         </div>
+                        <div class="map-trend-summary" id="map-trend-summary"></div>
+                        <div class="legend-container" id="legend"></div>
                     </div>
                     <div class="map-container">
                         <svg id="us-map"></svg>
+                    </div>
+                </div>
+                <div class="map-bottom-controls">
+                    <div class="control-title">Forecast Week</div>
+                    <div class="seg-group horizon-control horizontal" id="date-buttons">
+                        <!-- Populated by JS -->
                     </div>
                 </div>
                 <button class="info-btn" data-info="map" aria-label="Info">i</button>
@@ -64,20 +71,16 @@
             <!-- Gauges card -->
             <div class="card card-gauges">
                 <div class="gauges-overview" id="gauges-overview">
+                    <h3 class="forecast-context-title" id="forecast-context-title"></h3>
                     <p class="overview-primary" id="overview-primary"></p>
-                    <p class="overview-secondary" id="overview-secondary"></p>
                 </div>
                 <div class="gauges-stack">
-                    <div class="gauge-wrapper">
-                        <h3 class="gauge-title">Trend Forecast</h3>
-                        <svg id="gauge-trend"></svg>
-                        <div class="prob-labels" id="gauge-trend-labels"></div>
+                    <div class="gauge-wrapper" id="active-gauge-wrapper">
+                        <h3 class="gauge-title" id="active-gauge-title">Trend Forecast</h3>
+                        <svg id="gauge-active"></svg>
                     </div>
-                    <div class="gauge-wrapper">
-                        <h3 class="gauge-title">Activity Level</h3>
-                        <svg id="gauge-activity"></svg>
-                        <div class="prob-labels" id="gauge-activity-labels"></div>
-                    </div>
+                    <div class="bar-chart-container" id="us-bar-chart"></div>
+                    <div class="admissions-dist-container" id="admissions-dist"></div>
                 </div>
                 <button class="info-btn" data-info="gauges" aria-label="Info">i</button>
             </div>
@@ -86,41 +89,55 @@
         <!-- Trajectory section -->
         <hr class="section-divider">
         <h2 class="section-title">Trajectory Specific Forecasts</h2>
-        <p class="section-subtitle">Individual model simulations by state — click a state on the map or use the dropdown below</p>
+        <p class="section-subtitle">Individual model simulations by state. Select a state from the map above or the dropdown below. Click anywhere on the chart to jump to the forecast generated that week.</p>
         <div class="card card-trajectories" id="trajectory-section">
             <div class="traj-header">
                 <div class="traj-controls">
-                    <label class="traj-label">
+                    <label class="traj-label traj-label-location">
                         Location
-                        <select id="traj-location" class="traj-select"></select>
+                        <select id="traj-location" class="traj-select traj-select-location"></select>
                     </label>
                     <label class="traj-label">
                         Trajectories
-                        <select id="traj-count" class="traj-select">
-                            <option value="10">10</option>
-                            <option value="25">25</option>
-                            <option value="50" selected>50</option>
-                            <option value="100">100</option>
-                            <option value="200">200</option>
-                        </select>
+                        <div class="traj-slider-group">
+                            <input type="range" id="traj-slider" class="traj-slider" min="0" max="5" step="1" value="5">
+                            <span class="traj-slider-value" id="traj-slider-value">200</span>
+                        </div>
                     </label>
-                    <label class="traj-label">
-                        Color by horizon
-                        <select id="traj-horizon" class="traj-select">
-                            <option value="0">H0 (Current)</option>
-                            <option value="1">H1 (+1 Week)</option>
-                            <option value="2">H2 (+2 Weeks)</option>
-                            <option value="3">H3 (+3 Weeks)</option>
-                        </select>
-                    </label>
-                    <div class="context-dropdown" id="context-dropdown">
-                        <button class="context-btn" id="context-btn">Add Context</button><button class="context-arrow" id="context-arrow">&#9662;</button>
-                        <div class="context-menu" id="context-menu"></div>
+                    <div class="traj-label traj-pi-controls">
+                        Prediction Intervals
+                        <div class="traj-pi-buttons" id="traj-pi-buttons"></div>
                     </div>
                 </div>
             </div>
-            <div class="traj-chart-container">
-                <svg id="traj-chart"></svg>
+            <div class="traj-body">
+                <div class="traj-chart-container">
+                    <svg id="traj-chart"></svg>
+                </div>
+                <div class="traj-context-panel" id="traj-context-panel">
+                    <h3 class="context-panel-title">Add Context</h3>
+                    <div class="context-section" id="ctx-seasons">
+                        <button class="context-section-header" data-section="seasons">
+                            <span>Compare to Previous Seasons</span>
+                            <span class="context-chevron">&#9662;</span>
+                        </button>
+                        <div class="context-section-body" id="ctx-seasons-body"></div>
+                    </div>
+                    <div class="context-section" id="ctx-activity">
+                        <button class="context-section-header" data-section="activity">
+                            <span>Activity Levels</span>
+                            <span class="context-chevron">&#9662;</span>
+                        </button>
+                        <div class="context-section-body" id="ctx-activity-body"></div>
+                    </div>
+                    <div class="context-section" id="ctx-trends">
+                        <button class="context-section-header" data-section="trends">
+                            <span>Trend Forecasts</span>
+                            <span class="context-chevron">&#9662;</span>
+                        </button>
+                        <div class="context-section-body" id="ctx-trends-body"></div>
+                    </div>
+                </div>
             </div>
             <div class="traj-legend" id="traj-legend"></div>
             <button class="info-btn" data-info="traj" aria-label="Info">i</button>
@@ -128,14 +145,12 @@
     </main>
 
     <footer class="funding-footer">
-        This work was supported by xxxx
+        This work is supported by Cooperative Agreements NU38PW000005 from The Centers for Disease Control and Prevention (CDC) and CSTE and from CDC-RFA-FT-23-0069 from the CDC's Center for Forecasting and Outbreak Analytics.
     </footer>
 
     <!-- Tooltip containers -->
     <div class="tooltip" id="tooltip"></div>
     <div class="traj-tip" id="traj-tooltip"></div>
-    <!-- Info popover -->
-    <div class="info-popover" id="info-popover"></div>
 
     <script src="js/colors.js"></script>
     <script src="js/legend.js"></script>
