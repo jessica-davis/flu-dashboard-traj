@@ -98,7 +98,7 @@ function barsHtml(order, labels, colors, probs) {
         `<span class="bar-track"><span class="bar-fill" style="width:${(probs[c] * 100).toFixed(1)}%;background:${colors[c]}"></span></span>` +
         `<span>${pctText(probs[c])}</span></div>`).join("");
 }
-const confHtml = c => `<span class="conf-pill conf-${c.key}">${c.label}</span><span>${c.text}</span>`;
+const confHtml = c => `<span>${c.text}</span>`;
 
 // --- Page ----------------------------------------------------------------------------------
 async function initMethods() {

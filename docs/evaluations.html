@@ -17,9 +17,13 @@
         <div class="header-row">
             <div>
                 <h1>Influenza Hospitalization Forecast</h1>
-                <p class="subtitle">How the EpyStrain model's 2025-26 forecasts scored <span class="last-updated" id="eval-last-updated"></span></p>
+                <p class="subtitle">How the EpyStrain model's forecasts scored <span class="last-updated" id="eval-last-updated"></span></p>
             </div>
             <nav class="header-nav">
+                <label class="season-picker" for="season-select">
+                    <span class="season-picker-label">Season</span>
+                    <select id="season-select" class="season-select" aria-label="Select flu season"></select>
+                </label>
                 <a class="nav-link" href="index.html">Dashboard</a>
                 <a class="nav-link active" href="evaluations.html">Evaluations</a>
                 <a class="nav-link" href="methods.html">Methods</a>
@@ -29,7 +33,7 @@
 
     <main>
         <h2 class="section-title">Model Evaluation</h2>
-        <p class="eval-subtitle">Forecast performance across states and reference dates. Lower scores indicate better accuracy.</p>
+        <p class="eval-subtitle">Forecast performance across states and reference dates. Lower scores indicate better accuracy. <span id="eval-season-note"></span></p>
 
         <!-- Top section: map + controls/time series -->
         <div class="card eval-top-card">
@@ -146,6 +150,7 @@
     <!-- Tooltip -->
     <div class="tooltip" id="eval-tooltip"></div>
 
+    <script src="js/season.js"></script>
     <script src="js/tour.js"></script>
     <script src="js/evaluations.js"></script>
 </body>

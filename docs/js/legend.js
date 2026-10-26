@@ -11,7 +11,7 @@ function updateLegend() {
 
     if (view === "onset") {
         drawGradientLegend(container, "onset-grad", seasonStartColor, "Chance started", "100%", "0%",
-            { color: SEASON_STARTED_COLOR, label: "Started (reported)" });
+            { color: "url(#started-pattern)", label: "Started (reported)" });
     } else if (view === "peak") {
         drawGradientLegend(container, "peak-grad", peakRamp, "Chance peak passed", "100%", "0%");
     } else {

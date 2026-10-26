@@ -37,6 +37,17 @@ function initMap(topoData) {
     pattern.append("line").attr("x1", 0).attr("y1", 0).attr("x2", 0).attr("y2", 6)
         .attr("stroke", "#ddd").attr("stroke-width", 1.5);
 
+    // Hatched fill for "season started" (reported), so it reads apart from
+    // the blue chance-started shading.
+    const started = mapSvg.select("defs").append("pattern")
+        .attr("id", "started-pattern")
+        .attr("width", 6).attr("height", 6)
+        .attr("patternUnits", "userSpaceOnUse")
+        .attr("patternTransform", "rotate(45)");
+    started.append("rect").attr("width", 6).attr("height", 6).attr("fill", SEASON_STARTED_COLOR);
+    started.append("line").attr("x1", 0).attr("y1", 0).attr("x2", 0).attr("y2", 6)
+        .attr("stroke", "#fff").attr("stroke-width", 2.2);
+
     mapSvg.selectAll(".state")
         .data(stateFeatures)
         .join("path")
@@ -121,7 +132,7 @@ function getColorForFips(fips) {
     const entry = mapEntry(fips);
     if (!entry) return NONE;
     if (view === "onset") {
-        if (entry.season_started_observed) return SEASON_STARTED_COLOR;
+        if (entry.season_started_observed) return "url(#started-pattern)";
         return entry.onset_prob == null ? NONE : seasonStartColor(entry.onset_prob);
     }
     const colors = view === "trend" ? TREND_COLORS : ACTIVITY_COLORS;

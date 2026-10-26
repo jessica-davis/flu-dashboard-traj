@@ -1,6 +1,7 @@
 // Summary gauges: Influenza Activity, Influenza Trend (first tab) and Season
 // Start, Peak Week (second tab). Each has a dial, a one-sentence summary, a
-// confidence line and, behind "Show all chances", the full distribution.
+// line with the two most likely answers and, behind "Show all chances", the
+// full distribution.
 // Every routine takes the container and the data it needs; nothing here reads
 // the selected view.
 
@@ -468,7 +469,7 @@ function renderConfidence(selector, c) {
     const el = d3.select(selector);
     el.selectAll("*").remove();
     if (!c) return;
-    el.append("span").attr("class", `conf-pill conf-${c.key}`).text(c.label);
+    // The two most likely answers and their chances (no confidence tag).
     el.append("span").attr("class", "conf-text").text(c.text);
 }
 
@@ -518,8 +519,7 @@ function headlineNow(entry) {
     else sub += "Uncertain about both activity and trend.";
 
     return {
-        main: `<span style="color:${aColor}">${level}</span> activity` + (currentLoc() === "US" ? " nationally" : "") +
-            (trendHtml ? ` · ${trendHtml}` : ""),
+        main: `<span style="color:${aColor}">${level}</span> activity` + (trendHtml ? ` · ${trendHtml}` : ""),
         sub,
     };
 }
@@ -586,7 +586,7 @@ function summaryPeakRow(pw) {
 
 function updateHeadline(entry, pw, week, onset) {
     const loc = currentLoc();
-    d3.select("#headline-location").text(loc === "US" ? "United States (national)" : locationName(loc));
+    d3.select("#headline-location").text(locationName(loc));
     d3.select("#headline-date").text(`Week of ${weekRangeText(d3.timeFormat("%Y-%m-%d")(week.sat))}`);
     d3.select("#headline-main").html(headlineNow(entry).main);
     d3.select("#headline-visits").html(summaryVisits(entry));

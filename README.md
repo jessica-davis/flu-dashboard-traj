@@ -21,7 +21,7 @@ When a new weekly trajectory file is ready:
 
 Seasons are defined in [`scripts/seasons.py`](scripts/seasons.py): a season runs from the first Saturday on/after Aug 1. Reference dates are grouped into seasons automatically; each selectable season gets `docs/data/seasons/{season}/` and appears in the Season dropdown. Activity levels and the season-start (epidemic) threshold come from [`data/threshold_levels.csv`](data/threshold_levels.csv) (MEM), written to `docs/data/activity_thresholds.json` on every run.
 
-The evaluation steps below (3–5) still score the 2025-26 retrospective files.
+To refresh the Evaluations page as well (both seasons), run steps 3–5 below afterwards. `compute_all_scores.py` scores the processed trajectories in `data/processed/trajectories/` against `data/processed/target_data.parquet`, tags each row with its season, and skips excluded states for the baseline too. It downloads FluSight-Baseline files from GitHub, so set `SSL_CERT_FILE` as shown below first.
 
 ## Updating the dashboard
 
@@ -63,7 +63,7 @@ Reads from `data/processed/` (trajectories, locations, target data and vintages)
 python scripts/compute_all_scores.py
 ```
 
-Reads raw parquets from `raw/multistrain_retrospective_trajectories/` (not from `data/processed/`), pulls CDC surveillance data and FluSight-Baseline forecasts from GitHub, and writes four CSVs to `data/scores/`:
+Reads the per-location trajectories in `data/processed/trajectories/` (every season) and observed data from `data/processed/target_data.parquet`, pulls FluSight-Baseline forecasts from GitHub, and writes four CSVs to `data/scores/` (each row has a `season`):
 - `epystrain_energyscore_dat.csv`
 - `epystrain_WIS_dat.csv`
 - `baseline_energyscore_dat.csv`

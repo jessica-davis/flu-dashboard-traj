@@ -225,13 +225,13 @@
 
             <section class="sec" id="sure" style="--c:#4D6891">
                 <h2>How sure we are</h2>
-                <p class="col">Each gauge has a confidence label. It is the share of the 1,000 trajectories that give the most common answer. For example, if 890 of them land in Low, 89% agree, and the label is high confidence.</p>
+                <p class="col">How sure the model is shapes the wording of the overview at the top of the dashboard. It is the share of the 1,000 trajectories that give the most common answer: if 890 of them land in Low, 89% agree.</p>
                 <div class="conf-grid">
-                    <div class="conf-box high"><div class="lab">High confidence</div><div class="rule">More than 75%</div><div class="ex">e.g. 890 of 1,000 are Low</div></div>
-                    <div class="conf-box moderate"><div class="lab">Moderate confidence</div><div class="rule">51% to 75%</div><div class="ex">e.g. 620 of 1,000 are Stable</div></div>
-                    <div class="conf-box low"><div class="lab">Low confidence</div><div class="rule">50% or less</div><div class="ex">e.g. 460 are Low and 440 Medium</div></div>
+                    <div class="conf-box high"><div class="lab">More than 75% agree</div><div class="rule">“Low activity”</div><div class="ex">e.g. 890 of 1,000 are Low</div></div>
+                    <div class="conf-box moderate"><div class="lab">51% to 75% agree</div><div class="rule">“Likely Stable”</div><div class="ex">e.g. 620 of 1,000 are Stable</div></div>
+                    <div class="conf-box low"><div class="lab">50% or less agree</div><div class="rule">“Low to Medium”</div><div class="ex">e.g. 460 are Low and 440 Medium; a split trend reads “Trend unclear”</div></div>
                 </div>
-                <p class="col">For the trend, Increasing and Sharply Increasing count as the same answer, as do the two decreases. For the peak, the label depends on how close together the peak weeks are: 8 in 10 within two weeks is high, within four weeks moderate.</p>
+                <p class="col">For the trend, Increasing and Sharply Increasing count as the same answer, as do the two decreases.</p>
             </section>
 
             <section class="sec" id="try" style="--c:#E8A56D">
@@ -294,7 +294,7 @@
                     <div class="d-row"><dt>Season start</dt><dd>The first week admissions reach the epidemic threshold.</dd></div>
                     <div class="d-row"><dt>Peak</dt><dd>The week with the most flu hospital admissions in the season, forecast by extending the trajectories to the end of the season.</dd></div>
                     <div class="d-row"><dt>Chance</dt><dd>How many of the 1,000 trajectories give an answer. "Low 89%" means 890 are Low.</dd></div>
-                    <div class="d-row"><dt>Confidence</dt><dd>The share giving the most common answer: high above 75%, moderate above 50%, low otherwise.</dd></div>
+                    <div class="d-row"><dt>Agreement</dt><dd>The share of trajectories giving the most common answer. Above 75% the overview names the answer; above 50% it says “Likely”; otherwise it gives a range or says the trend is unclear.</dd></div>
                 </dl>
                 <p class="fig-note">The epidemic and intensity thresholds come from the Moving Epidemic Method: Vega T, Lozano JE, Meerhoff T, et al. Influenza surveillance in Europe: establishing epidemic thresholds by the moving epidemic method. <em>Influenza and Other Respiratory Viruses</em> 2013;7(4):546–558. MEM is the threshold method recommended in WHO's Pandemic Influenza Severity Assessment (PISA) guidance and used by WHO Europe and ECDC.</p>
             </div>

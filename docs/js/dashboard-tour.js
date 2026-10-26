@@ -33,13 +33,13 @@ const VIEW_INFO = {
         body: "Has the flu season begun? The season starts the first week hospital admissions reach the <strong>epidemic threshold</strong>, the level that separates ordinary off-season activity from the flu season (the Moving Epidemic Method used by WHO Europe and ECDC). " +
             "Before that happens, the dial shows the chance the season will have started by the selected week, and the sentence says it in words. " +
             "Once reported admissions have crossed the threshold, the gauge reports the week it happened.<br><br>" +
-            "<strong>Confidence</strong> is the share of runs that agree on started or not yet. <strong>Show all chances</strong> lists the chance for each of the four forecast weeks; these only go up from week 1 to week 4, because they mean \u201cby this week or earlier\u201d."
+            "<strong>Show all chances</strong> lists the chance for each of the four forecast weeks; these only go up from week 1 to week 4, because they mean \u201cby this week or earlier\u201d."
     },
     peak: {
         title: "Projected Peak Week",
         body: "When will admissions be highest, and is the worst over? Each model run has its own peak week; the sentence names the most likely one. " +
             "The dial is the chance the peak has <strong>already happened</strong> by the selected week: near 0% means it is still ahead, near 100% means it has most likely passed and admissions should decline.<br><br>" +
-            "<strong>Confidence</strong> is how tightly the runs agree on timing: high when 8 in 10 of their peaks fall within two weeks. Underneath are the two most likely peak weeks. <strong>Show all chances</strong> lists more.<br><br>" +
+            "Underneath are the two most likely peak weeks. <strong>Show all chances</strong> lists more.<br><br>" +
             "The peak week is read from the whole length of each model run, so it can fall later than the four weeks shown on the chart."
     }
 };
@@ -80,7 +80,7 @@ const TOUR_STEPS = [
         selector: ".summary-pane.active",
         infoKey: "panels",
         title: "The gauges",
-        text: "Each gauge has a <strong>needle</strong> pointing to the forecast, a short answer in words, and how sure the model is (<strong>high</strong>, <strong>moderate</strong> or <strong>low confidence</strong>). " +
+        text: "Each gauge has a <strong>needle</strong> pointing to the forecast, a short answer in words, and the chances of the two most likely answers. " +
             "The model makes 1,000 forecasts with slightly different assumptions, and the chances are how many of them agree.<br><br>" +
             "<strong>Show all chances</strong> lists every option. The <strong>?</strong> on each gauge explains how it is calculated, with this week as an example.",
         position: "left",

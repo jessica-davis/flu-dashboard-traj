@@ -143,32 +143,47 @@ function updateLastUpdatedLabel() {
     el.textContent = `  |  ${label}: ${formatted}`;
 }
 
-// --- Reference date (previous forecast) dropdown ---------------------------
+// --- Reference date (forecast submission) dropdowns -------------------------
+// One beside the map, one above the chart; both always show the same forecast.
+
+const REF_DATE_SELECTS = ["ref-date-select", "map-ref-date-select"];
 
 function initRefDateDropdown() {
-    const select = document.getElementById("ref-date-select");
-    if (!select) return;
-
     const dates = [...(dashboardData.reference_dates || [])].sort().reverse();
-    select.innerHTML = "";
-    if (dates.length === 0) return;  // no forecasts yet; the group is hidden in surveillance mode
-    dates.forEach((d, i) => {
-        const opt = document.createElement("option");
-        opt.value = d;
-        opt.textContent = i === 0 ? `${d} (most recent)` : d;
-        select.appendChild(opt);
+    REF_DATE_SELECTS.forEach(id => {
+        const select = document.getElementById(id);
+        if (!select) return;
+        select.innerHTML = "";
+        if (dates.length === 0) return;  // no forecasts yet; the groups are hidden in surveillance mode
+        dates.forEach((d, i) => {
+            const opt = document.createElement("option");
+            opt.value = d;
+            opt.textContent = i === 0 ? `${d} (most recent)` : d;
+            select.appendChild(opt);
+        });
+        select.addEventListener("change", () => setRefDate(select.value));
     });
-    select.value = AppState.currentRefDate;
+    syncRefDateSelects();
+}
 
-    select.addEventListener("change", () => {
-        AppState.currentRefDate = select.value;
-        AppState.vintageAsOf = null;   // snapshot follows the chosen forecast again
-        AppState.currentHorizon = 0;
-        buildDateButtons();
-        updateLastUpdatedLabel();
-        updateAll();
-        drawTrajectories();
+function syncRefDateSelects() {
+    REF_DATE_SELECTS.forEach(id => {
+        const select = document.getElementById(id);
+        if (select && AppState.currentRefDate) select.value = AppState.currentRefDate;
     });
+}
+
+// Show the forecast submitted for `refDate`, starting from its first week.
+function setRefDate(refDate) {
+    if (!refDate || refDate === AppState.currentRefDate) return;
+    AppState.currentRefDate = refDate;
+    AppState.vintageAsOf = null;   // snapshot follows the chosen forecast again
+    AppState.currentHorizon = 0;
+    syncRefDateSelects();
+    buildDateButtons();
+    updateLastUpdatedLabel();
+    updateAll();
+    drawTrajectories();
 }
 
 // Reset to the most recent forecast for the United States and scroll to top
@@ -182,9 +197,7 @@ function jumpToMostRecent() {
     d3.selectAll(".estimate-seg").classed("active", function () { return this.dataset.estimate === "most_likely"; });
     showTab("now");
 
-    const select = document.getElementById("ref-date-select");
-    if (select) select.value = AppState.currentRefDate;
-
+    syncRefDateSelects();
     buildDateButtons();
     updateLastUpdatedLabel();
     const moved = AppState.selectedState !== DEFAULT_LOCATION;

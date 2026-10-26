@@ -665,8 +665,7 @@ function drawTrajectories() {
             });
             if (closest !== AppState.currentRefDate) {
                 AppState.currentRefDate = closest;
-                const sel = document.getElementById("ref-date-select");
-                if (sel) sel.value = closest;
+                if (typeof syncRefDateSelects === "function") syncRefDateSelects();
                 buildDateButtons();
                 if (typeof updateLastUpdatedLabel === "function") updateLastUpdatedLabel();
                 updateAll();

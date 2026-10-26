@@ -43,13 +43,25 @@ let hoverLegendState = { epystrain: true, baseline: true, surv: true };
 // ====================== INIT ======================
 async function initEvaluations() {
     try {
+        // Season from ?season= or the manifest default (season.js).
+        await bootSeasonHeader();
         const [scores, locations, topo, target] = await Promise.all([
-            d3.json("data/evaluation_scores.json"),
-            d3.json("data/locations.json"),
+            d3.json(dataUrl("data/evaluation_scores.json")),
+            d3.json(dataUrl("data/locations.json")),
             d3.json("data/us-states.json"),
-            d3.json("data/target_data.json")
+            d3.json(dataUrl("data/target_data.json"))
         ]);
-        evalData = scores;
+        evalData = scores.filter(d => d.season === seasonMeta.name);
+        if (!evalData.length) {
+            document.querySelector("main").innerHTML =
+                `<div class="card season-notice" style="display:block"><h3 class="season-notice-title">No scored forecasts yet for ${seasonMeta.name}.</h3>` +
+                `<p class="season-notice-text">Forecasts are scored once the weeks they cover have been reported.</p></div>`;
+            return;
+        }
+        if (seasonMeta.name === seasonManifest.default_season) {
+            const note = document.getElementById("eval-season-note");
+            if (note) note.textContent = "Each forecast is scored on the weeks reported so far, so the latest forecasts are scored on fewer weeks (or not yet).";
+        }
         evalLocations = locations;
         evalTopoData = topo;
         evalTargetData = target;
@@ -1026,12 +1038,12 @@ function initTrajChart() {
 async function loadAndDrawEvalTraj() {
     const fips = d3.select("#eval-traj-location").property("value");
     try {
-        evalTrajData = await d3.json(`data/seasons/2025-26/trajectories/${fips}.json`);
+        evalTrajData = await d3.json(seasonDataPath(seasonMeta.name, `trajectories/${fips}.json`));
     } catch {
         evalTrajData = null;
     }
     try {
-        evalBaselineQuantiles = await d3.json(`data/baseline_quantiles/${fips}.json`);
+        evalBaselineQuantiles = await d3.json(dataUrl(`data/baseline_quantiles/${fips}.json`));
     } catch {
         evalBaselineQuantiles = null;
     }
@@ -1074,9 +1086,9 @@ function drawEvalTrajectories() {
     const observed = (evalTargetData?.[fips] || [])
         .filter(d => d.value != null)
         .map(d => ({ date: new Date(d.date + "T00:00:00"), value: d.value }));
-    // The 2025-26 season only (observed data now continues into 2026-27).
-    const showFrom = new Date("2025-11-01T00:00:00");
-    const showUntil = new Date("2026-07-31T00:00:00");
+    // The selected season only, from the chart's usual start.
+    const showFrom = new Date(seasonMeta.chart_start + "T00:00:00");
+    const showUntil = new Date(seasonMeta.end + "T00:00:00");
     const recentObs = observed.filter(d => d.date >= showFrom && d.date <= showUntil);
 
     // Trajectory data for selected ref date

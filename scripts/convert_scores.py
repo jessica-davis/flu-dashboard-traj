@@ -15,7 +15,7 @@ baseline_wis = pd.read_csv(SCORES_DIR / "baseline_WIS_dat.csv")
 # Empirical coverage is model-only (no baseline), in steps of 10%.
 COVERAGE_LEVELS = [10, 20, 30, 40, 50, 60, 70, 80, 90]
 
-merged = es.merge(wis, on=["location", "reference_date", "location_name"], how="outer")
+merged = es.merge(wis, on=["location", "reference_date", "season", "location_name"], how="outer")
 baseline_es = baseline_es.rename(columns={
     "energyscore": "baseline_energyscore",
     "energyscore_norm": "baseline_energyscore_norm",
@@ -24,8 +24,8 @@ baseline_wis = baseline_wis.rename(columns={
     "WIS": "baseline_WIS",
     "WIS_norm": "baseline_WIS_norm",
 })
-merged = merged.merge(baseline_es, on=["location", "reference_date", "location_name"], how="outer")
-merged = merged.merge(baseline_wis, on=["location", "reference_date", "location_name"], how="outer")
+merged = merged.merge(baseline_es, on=["location", "reference_date", "season", "location_name"], how="outer")
+merged = merged.merge(baseline_wis, on=["location", "reference_date", "season", "location_name"], how="outer")
 
 # Round floats for smaller file size
 round_cols = ["energyscore", "energyscore_norm", "WIS", "WIS_norm",

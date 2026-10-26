@@ -30,16 +30,24 @@ Math:
     coverage = Σ covered / Σ cov_n_obs. Perfect calibration → empirical ≈ nominal.
 """
 
+import json
 import numpy as np
 import pandas as pd
 import time
 from pathlib import Path
 
+from seasons import season_for_date
+
 ROOT = Path(__file__).resolve().parent.parent
-TRAJ_DIR = ROOT / "raw" / "retro20260615_trajectories"
+# Every season's trajectories, already split per location with FIPS codes and
+# the data/exclusions.json states removed (scripts/csv_to_parquet.py).
+TRAJ_DIR = ROOT / "data" / "processed" / "trajectories"
+# Observed admissions: the FluSight hub series the dashboard uses
+# (scripts/fetch_flusight_target_data.py).
+TARGET_FILE = ROOT / "data" / "processed" / "target_data.parquet"
+EXCLUSIONS_FILE = ROOT / "data" / "exclusions.json"
 SCORES_DIR = ROOT / "data" / "scores"
 CODEBOOK = ROOT / "data" / "location_codebook.csv"
-SURV_URL = "https://raw.githubusercontent.com/cdcepi/FluSight-forecast-hub/main/target-data/target-hospital-admissions.csv"
 BASE_URL = "https://raw.githubusercontent.com/cdcepi/FluSight-forecast-hub/main/model-output/FluSight-baseline"
 
 N_BASELINE_SAMPLES = 500
@@ -119,34 +127,28 @@ def coverage_row_fields(counts, n, prefix=""):
 
 # ── Load location codebook ──────────────────────────────────────────────────
 loc_df = pd.read_csv(CODEBOOK)[["location_code", "location_name", "location_name_epydemix"]]
-
-
-def _norm_loc(name):
-    """Collapse repeated underscores so both single- (United_States_Alabama)
-    and double-underscore (United_States__Alabama) trajectory naming match the
-    codebook's single-underscore keys."""
-    return "_".join(part for part in str(name).split("_") if part)
-
-
-epydemix_to_code = {
-    _norm_loc(k): v
-    for k, v in zip(loc_df["location_name_epydemix"], loc_df["location_code"])
-}
 code_to_name = dict(zip(loc_df["location_code"], loc_df["location_name"]))
+name_to_code = dict(zip(loc_df["location_name"], loc_df["location_code"]))
+
+# States left out of a forecast are left out of the baseline's scores too, so
+# both models are compared on the same locations.
+excluded = {}
+if EXCLUSIONS_FILE.exists():
+    with open(EXCLUSIONS_FILE) as f:
+        excluded = {k: {name_to_code.get(n, n) for n in v}
+                    for k, v in json.load(f).items() if not k.startswith("_")}
 
 # ── Load surveillance data ──────────────────────────────────────────────────
 print("Loading surveillance data...")
-observations = pd.read_csv(SURV_URL, dtype={"location": str})
-observations["date"] = pd.to_datetime(observations["date"])
-obs_weekly = observations.groupby(
-    ["location", pd.Grouper(key="date", freq="W-SAT")]
-).sum(numeric_only=True).reset_index()
-obs_max_date = obs_weekly.date.max()
-print(f"  Observations max date: {obs_max_date.date()}")
+obs = pd.read_parquet(TARGET_FILE)
+obs = obs[obs["value"].notna()]
+obs_lookup = {(r.location, r.date): float(r.value) for r in obs.itertuples()}
+obs_max_date = obs["date"].max()
+print(f"  Observations max date: {obs_max_date}")
 
-# ── Get reference dates from parquet files ──────────────────────────────────
-parquet_files = sorted(TRAJ_DIR.glob("epystrain_trajectories_*.parquet"))
-ref_dates = [f.stem.replace("epystrain_trajectories_", "") for f in parquet_files]
+# ── Get reference dates from the processed trajectories ─────────────────────
+ref_dates = sorted(d.name.replace("ref_", "") for d in TRAJ_DIR.iterdir()
+                   if d.is_dir() and d.name.startswith("ref_"))
 print(f"Reference dates ({len(ref_dates)}): {ref_dates}")
 
 # ── Compute model scores ────────────────────────────────────────────────────
@@ -158,34 +160,21 @@ t_start = time.time()
 for idx, ref_date_str in enumerate(ref_dates):
     print(f"  [{idx+1}/{len(ref_dates)}] {ref_date_str}...", end="", flush=True)
     t0 = time.time()
-    pq_path = TRAJ_DIR / f"epystrain_trajectories_{ref_date_str}.parquet"
-    traj = pd.read_parquet(pq_path)
+    season = season_for_date(ref_date_str)
 
     n_locs = 0
-    for loc_epydemix in sorted(traj["location"].unique()):
-        loc_code = epydemix_to_code.get(_norm_loc(loc_epydemix))
-        if loc_code is None:
-            continue
+    for pq_path in sorted((TRAJ_DIR / f"ref_{ref_date_str}").glob("loc_*.parquet")):
+        loc_traj = pd.read_parquet(pq_path, columns=["run_id", "horizon", "date", "value", "fips"])
+        loc_code = str(loc_traj["fips"].iloc[0])
 
-        loc_traj = traj[traj["location"] == loc_epydemix]
-
-        # Build trajectory matrix X (N_samples, n_horizons) and obs vector y
-        horizon_dates = []
+        # Scored horizons: consecutive from week 1 while the week has been reported.
+        dates_by_h = loc_traj.drop_duplicates("horizon").set_index("horizon")["date"].to_dict()
         obs_vals = []
         for h in HORIZONS:
-            h_data = loc_traj[loc_traj["horizon"] == h]
-            if len(h_data) == 0:
+            target_date = dates_by_h.get(h)
+            if target_date is None or target_date > obs_max_date or (loc_code, target_date) not in obs_lookup:
                 break
-            target_date = h_data["date"].iloc[0]
-            if target_date > obs_max_date:
-                break
-            obs_row = obs_weekly[
-                (obs_weekly.location == loc_code) & (obs_weekly.date == target_date)
-            ]
-            if len(obs_row) == 0:
-                break
-            horizon_dates.append(target_date)
-            obs_vals.append(obs_row["value"].iloc[0])
+            obs_vals.append(obs_lookup[(loc_code, target_date)])
 
         if len(obs_vals) == 0:
             continue
@@ -193,14 +182,10 @@ for idx, ref_date_str in enumerate(ref_dates):
         n_horizons = len(obs_vals)
         y = np.array(obs_vals)
 
-        # Build X matrix: (N_samples, n_horizons)
-        sample_ids = sorted(loc_traj["sample_id"].unique())
-        X = np.zeros((len(sample_ids), n_horizons))
-        for h_idx, h in enumerate(HORIZONS[:n_horizons]):
-            h_data = loc_traj[loc_traj["horizon"] == h].set_index("sample_id")
-            for s_idx, sid in enumerate(sample_ids):
-                if sid in h_data.index:
-                    X[s_idx, h_idx] = h_data.loc[sid, "target_baseline_k5"]
+        # Trajectory matrix X: (N_samples, n_horizons)
+        X = (loc_traj[loc_traj["horizon"].isin(HORIZONS[:n_horizons])]
+             .pivot_table(index="run_id", columns="horizon", values="value")
+             [HORIZONS[:n_horizons]].fillna(0).values)
 
         # Energy Score
         ES = energyscore(X, y)
@@ -208,6 +193,7 @@ for idx, ref_date_str in enumerate(ref_dates):
         model_es_rows.append({
             "location": loc_code,
             "reference_date": ref_date_str,
+            "season": season,
             "energyscore": ES,
             "energyscore_norm": ES_norm,
             "location_name": code_to_name.get(loc_code, loc_code),
@@ -221,6 +207,7 @@ for idx, ref_date_str in enumerate(ref_dates):
         model_wis_rows.append({
             "location": loc_code,
             "reference_date": ref_date_str,
+            "season": season,
             "WIS": WIS,
             "WIS_norm": WIS_norm,
             "location_name": code_to_name.get(loc_code, loc_code),
@@ -256,31 +243,21 @@ for idx, ref_date_str in enumerate(ref_dates):
     ].copy()
     bl["output_type_id"] = bl["output_type_id"].astype(float)
     bl["value"] = bl["value"].astype(float)
-    bl["target_end_date"] = pd.to_datetime(bl["target_end_date"])
+    bl["target_end_date"] = pd.to_datetime(bl["target_end_date"]).dt.strftime("%Y-%m-%d")
+    season = season_for_date(ref_date_str)
 
     n_locs = 0
     for loc in sorted(bl["location"].unique()):
+        if loc in excluded.get(ref_date_str, ()):
+            continue
         loc_bl = bl[bl["location"] == loc]
 
-        available_dates = sorted(loc_bl["target_end_date"].unique())
-        available_dates = [d for d in available_dates if d <= obs_max_date]
-        if not available_dates:
-            continue
-
-        obs_filt = obs_weekly[
-            (obs_weekly.location == loc)
-            & (obs_weekly.date.isin(available_dates))
-        ].sort_values("date")
-
-        common_dates = sorted(
-            set(pd.Timestamp(d) for d in available_dates) & set(obs_filt.date)
-        )
+        common_dates = [d for d in sorted(loc_bl["target_end_date"].unique())
+                        if d <= obs_max_date and (loc, d) in obs_lookup]
         if not common_dates:
             continue
 
-        y = np.array(
-            obs_filt[obs_filt.date.isin(common_dates)].sort_values("date").value
-        )
+        y = np.array([obs_lookup[(loc, d)] for d in common_dates])
         n_horizons = len(common_dates)
 
         # Build quantile matrix for WIS
@@ -299,6 +276,7 @@ for idx, ref_date_str in enumerate(ref_dates):
         baseline_wis_rows.append({
             "location": loc,
             "reference_date": ref_date_str,
+            "season": season,
             "WIS": WIS,
             "WIS_norm": WIS_norm,
             "location_name": code_to_name.get(loc, loc),
@@ -320,6 +298,7 @@ for idx, ref_date_str in enumerate(ref_dates):
         baseline_es_rows.append({
             "location": loc,
             "reference_date": ref_date_str,
+            "season": season,
             "energyscore": ES,
             "energyscore_norm": ES_norm,
             "location_name": code_to_name.get(loc, loc),

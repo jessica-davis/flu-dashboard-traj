@@ -3235,3 +3235,27 @@ header .nav-link.tab-action-link { display: inline; }
 .card-map .panel-week-row .control-title { margin: 0; white-space: nowrap; }
 .card-map .panel-week-row .horizon-control { flex: 1; }
 body.no-forecast .card-map .panel-week-row { display: none; }
+
+/* Chart controls: Location matches Forecast (same label, size, font and
+   width), and the slider sits on the same baseline. */
+.traj-controls .traj-label-location { font-size: 13px; width: 168px; }
+.traj-controls .traj-select-location {
+    font-family: var(--font);
+    font-size: 12px;
+    padding: 4px 6px;
+    border: 1px solid #ccc;
+    border-radius: 4px;
+    width: 100%;
+    color: #1a1a1a;
+    cursor: pointer;
+}
+.traj-controls .traj-select-location:focus {
+    outline: none;
+    border-color: #4682B4;
+    box-shadow: 0 0 0 2px rgba(70, 130, 180, 0.2);
+}
+.traj-controls .traj-label-slider .traj-slider-group { height: 26px; }
+
+/* Forecast (submission) dropdown in the map's left column */
+.map-ref-date-group .ref-date-select { width: 100%; }
+body.no-forecast .map-ref-date-group { display: none; }
