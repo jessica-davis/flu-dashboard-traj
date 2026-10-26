@@ -26,11 +26,16 @@ const EVAL_TS_W = 300;
 const EVAL_TS_H = 180;
 const EVAL_TRAJ_W = 1100;
 const EVAL_TRAJ_H = 420;
-const EVAL_TRAJ_MARGIN = { top: 20, right: 30, bottom: 40, left: 60 };
+const EVAL_TRAJ_MARGIN = { top: 20, right: 30, bottom: 40, left: 72 };
 const EVAL_FONT = "Helvetica Neue, Arial, sans-serif";
 
 // Track available ref dates from trajectory files (for click-to-jump)
 let evalTrajRefDates = [];
+
+// Coverage / calibration state
+let _calibFips = null; // null = pool across all states; otherwise a single state fips
+const COVERAGE_LEVELS = [10, 20, 30, 40, 50, 60, 70, 80, 90];
+const COV_MODEL_COLOR = "#5B7065";
 
 // Hover chart legend toggle state
 let hoverLegendState = { epystrain: true, baseline: true, surv: true };
@@ -108,11 +113,22 @@ async function initEvaluations() {
                 '<p><strong>Last 4 Wk</strong> — Average of the four most recent reference dates.</p>' +
                 '<p>The reference date dropdown below selects a single date instead of an aggregation.</p>' +
                 '</div>';
+            INFO_TEXT["eval-coverage"] =
+                '<div class="info-section">' +
+                '<strong class="info-section-title">Prediction Interval Coverage</strong>' +
+                '<p>For each nominal central interval level (50%, 80%, 90%, 95%), empirical coverage is the fraction of scored observations ' +
+                'that fell inside that interval, built from the forecast quantiles. Each observation is one (location, reference date, horizon 0–3) point; ' +
+                'coverage pools these over the reference-date window selected above.</p>' +
+                '<p>The <strong>calibration curve</strong> plots nominal against empirical coverage. The 45° line is perfect calibration. ' +
+                'Points <em>below</em> the line mean intervals are too narrow (overconfident); points <em>above</em> mean they are too wide (underconfident).</p>' +
+                '<p>Hover a state on the map to restrict the curve to that state; move away to pool across all states.</p>' +
+                '</div>';
         }
         if (typeof initInfoButtons === "function") initInfoButtons();
 
         buildEvalControls();
         drawEvalMap();
+        initCalibChart();
         buildTrajControls();
         initTrajChart();
         updateAllEval();
@@ -303,6 +319,8 @@ function updateAllEval() {
     updateMapSummary();
     // Refresh the time series for the currently displayed state (or US default)
     drawHoverTimeSeries(_hoverFips || "US");
+    // Refresh the calibration curve for the current scope + aggregation window
+    drawCalibrationCurve();
 }
 
 function updateMapSummary() {
@@ -459,6 +477,8 @@ function handleEvalHoverIn(event, d) {
     _hoverFips = fips;
     d3.select(this).attr("stroke", "#1a1a1a").attr("stroke-width", 2);
     drawHoverTimeSeries(fips);
+    _calibFips = fips;
+    drawCalibrationCurve();
 }
 
 function handleEvalHoverMove(event) {
@@ -470,6 +490,9 @@ function handleEvalHoverOut() {
     d3.select(this).attr("stroke", "#fff").attr("stroke-width", 0.8);
     // Return to US default instead of clearing
     drawHoverTimeSeries("US");
+    // Return calibration curve to the all-states pooled view
+    _calibFips = null;
+    drawCalibrationCurve();
 }
 
 function handleEvalStateClick(event, d) {
@@ -781,6 +804,179 @@ function drawEvalLegend(colorScale, minVal, maxVal) {
     }
 }
 
+// ====================== PREDICTION-INTERVAL COVERAGE ======================
+const CALIB_W = 332, CALIB_H = 328;
+const CALIB_M = { top: 14, right: 18, bottom: 50, left: 50 };
+let calibSvg, calibG;
+
+// Pool empirical coverage over the active reference-date window.
+// fips === null pools across all states; otherwise restricts to one location.
+function getCoverageData(fips) {
+    const dates = new Set(getActiveRefDates());
+    const acc = {};
+    COVERAGE_LEVELS.forEach(l => {
+        acc[l] = { mHits: 0, mN: 0 };
+    });
+
+    evalData.forEach(d => {
+        if (!dates.has(d.reference_date)) return;
+        if (fips) {
+            if (d.location !== fips) return;
+        } else if (d.location === "US") {
+            return; // pooled view = all states, exclude the national row
+        }
+        const mN = d.cov_n_obs;
+        if (mN != null) {
+            COVERAGE_LEVELS.forEach(l => {
+                const c = d["coverage_" + l];
+                if (c != null) { acc[l].mHits += c * mN; acc[l].mN += mN; }
+            });
+        }
+    });
+
+    return COVERAGE_LEVELS.map(l => ({
+        level: l,
+        model: acc[l].mN > 0 ? acc[l].mHits / acc[l].mN : null,
+        modelN: acc[l].mN,
+    }));
+}
+
+function initCalibChart() {
+    calibSvg = d3.select("#eval-calib-chart")
+        .attr("viewBox", `0 0 ${CALIB_W} ${CALIB_H}`)
+        .attr("preserveAspectRatio", "xMidYMid meet");
+    calibG = calibSvg.append("g")
+        .attr("transform", `translate(${CALIB_M.left},${CALIB_M.top})`);
+}
+
+function drawCalibrationCurve() {
+    if (!calibG) return;
+    const innerW = CALIB_W - CALIB_M.left - CALIB_M.right;
+    const innerH = CALIB_H - CALIB_M.top - CALIB_M.bottom;
+    calibG.selectAll("*").remove();
+
+    const data = getCoverageData(_calibFips);
+
+    // Scope label above the chart
+    const scopeName = _calibFips
+        ? (evalFipsToName[_calibFips] || _calibFips)
+        : "All states (pooled)";
+    d3.select("#eval-calib-scope").text(scopeName);
+
+    const x = d3.scaleLinear().domain([0, 1]).range([0, innerW]);
+    const y = d3.scaleLinear().domain([0, 1]).range([innerH, 0]);
+    const pct = v => Math.round(v * 100) + "%";
+
+    // Gridlines
+    const ticks = [0, 0.25, 0.5, 0.75, 1];
+    ticks.forEach(t => {
+        calibG.append("line")
+            .attr("x1", x(t)).attr("x2", x(t)).attr("y1", 0).attr("y2", innerH)
+            .attr("stroke", "#f0f0f0").attr("stroke-width", 1);
+        calibG.append("line")
+            .attr("x1", 0).attr("x2", innerW).attr("y1", y(t)).attr("y2", y(t))
+            .attr("stroke", "#f0f0f0").attr("stroke-width", 1);
+    });
+
+    // 45° perfect-calibration reference line
+    calibG.append("line")
+        .attr("x1", x(0)).attr("y1", y(0)).attr("x2", x(1)).attr("y2", y(1))
+        .attr("stroke", "#bbb").attr("stroke-width", 1).attr("stroke-dasharray", "4,3");
+    calibG.append("text")
+        .attr("x", x(0.5) + 4).attr("y", y(0.5) - 6)
+        .attr("font-family", EVAL_FONT).attr("font-size", "9px")
+        .attr("fill", "#bbb").attr("transform", `rotate(-45, ${x(0.5)}, ${y(0.5)})`)
+        .text("perfect calibration");
+
+    // Faint directional hints
+    calibG.append("text")
+        .attr("x", innerW - 4).attr("y", innerH - 8).attr("text-anchor", "end")
+        .attr("font-family", EVAL_FONT).attr("font-size", "9px").attr("fill", "#ccc")
+        .text("↓ too narrow (overconfident)");
+
+    // Axes
+    calibG.append("g").attr("transform", `translate(0,${innerH})`)
+        .call(d3.axisBottom(x).tickValues(ticks).tickFormat(pct))
+        .selectAll("text").attr("font-family", EVAL_FONT).attr("font-size", "10px").attr("fill", "#888");
+    calibG.append("g")
+        .call(d3.axisLeft(y).tickValues(ticks).tickFormat(pct))
+        .selectAll("text").attr("font-family", EVAL_FONT).attr("font-size", "10px").attr("fill", "#888");
+    calibG.selectAll(".domain").attr("stroke", "#ccc");
+    calibG.selectAll(".tick line").attr("stroke", "#ddd");
+
+    // Axis titles
+    calibG.append("text")
+        .attr("x", innerW / 2).attr("y", innerH + 34)
+        .attr("text-anchor", "middle").attr("font-family", EVAL_FONT)
+        .attr("font-size", "11px").attr("fill", "#666")
+        .text("Nominal interval level");
+    calibG.append("text")
+        .attr("transform", "rotate(-90)")
+        .attr("x", -innerH / 2).attr("y", -36)
+        .attr("text-anchor", "middle").attr("font-family", EVAL_FONT)
+        .attr("font-size", "11px").attr("fill", "#666")
+        .text("Empirical coverage");
+
+    // EpyStrain calibration line
+    const line = d3.line().x(d => x(d.level / 100)).y(d => y(d.emp)).defined(d => d.emp != null);
+    const pts = data
+        .map(d => ({ level: d.level, emp: d.model }))
+        .filter(d => d.emp != null);
+    if (pts.length > 0) {
+        calibG.append("path").datum(pts)
+            .attr("d", line).attr("fill", "none")
+            .attr("stroke", COV_MODEL_COLOR).attr("stroke-width", 2);
+        calibG.selectAll(".dot-model").data(pts).join("circle")
+            .attr("cx", d => x(d.level / 100)).attr("cy", d => y(d.emp))
+            .attr("r", 4).attr("fill", COV_MODEL_COLOR).attr("stroke", "#fff").attr("stroke-width", 1);
+    }
+
+    // Legend (upper-left, where the plot is empty)
+    const legendG = calibG.append("g").attr("transform", "translate(6, 4)");
+    legendG.append("line").attr("x1", 0).attr("x2", 14).attr("y1", 5).attr("y2", 5)
+        .attr("stroke", COV_MODEL_COLOR).attr("stroke-width", 2);
+    legendG.append("circle").attr("cx", 7).attr("cy", 5).attr("r", 3)
+        .attr("fill", COV_MODEL_COLOR).attr("stroke", "#fff").attr("stroke-width", 1);
+    legendG.append("text").attr("x", 19).attr("y", 8)
+        .attr("font-family", EVAL_FONT).attr("font-size", "10px")
+        .attr("fill", COV_MODEL_COLOR).attr("font-weight", "600").text("EpyStrain");
+
+    renderCoverageTable(data);
+}
+
+function renderCoverageTable(data) {
+    const table = d3.select("#eval-coverage-table");
+    table.selectAll("*").remove();
+
+    const fmtPct = v => v == null ? "—" : (v * 100).toFixed(1) + "%";
+    const fmtGap = v => v == null ? "" : (v >= 0 ? "+" : "") + (v * 100).toFixed(1);
+
+    const thead = table.append("thead").append("tr");
+    thead.append("th").text("Nominal");
+    thead.append("th").html('<span class="cov-swatch" style="background:' + COV_MODEL_COLOR + '"></span>Empirical');
+    thead.append("th").text("Δ vs nominal");
+
+    const tbody = table.append("tbody");
+    data.forEach(d => {
+        const tr = tbody.append("tr");
+        tr.append("td").text(d.level + "%");
+        const mGap = d.model != null ? d.model - d.level / 100 : null;
+        tr.append("td").text(fmtPct(d.model));
+        tr.append("td").html(mGap != null
+            ? '<span style="color:#aaa;font-size:11px">' + fmtGap(mGap) + '</span>' : "");
+    });
+
+    // Observation-count footer
+    const nModel = data.length ? data[0].modelN : 0;
+    const tfoot = table.append("tfoot").append("tr");
+    tfoot.append("td").attr("colspan", 3)
+        .style("padding-top", "8px")
+        .style("color", "#999").style("font-size", "11px")
+        .style("border-bottom", "none")
+        .text(`Observations: ${nModel.toLocaleString()}. `
+            + `Δ = empirical − nominal (negative ⇒ intervals too narrow).`);
+}
+
 // ====================== TRAJECTORY CONTROLS ======================
 function buildTrajControls() {
     const locSel = d3.select("#eval-traj-location");
@@ -830,7 +1026,7 @@ function initTrajChart() {
 async function loadAndDrawEvalTraj() {
     const fips = d3.select("#eval-traj-location").property("value");
     try {
-        evalTrajData = await d3.json(`data/trajectories/${fips}.json`);
+        evalTrajData = await d3.json(`data/seasons/2025-26/trajectories/${fips}.json`);
     } catch {
         evalTrajData = null;
     }
@@ -878,8 +1074,10 @@ function drawEvalTrajectories() {
     const observed = (evalTargetData?.[fips] || [])
         .filter(d => d.value != null)
         .map(d => ({ date: new Date(d.date + "T00:00:00"), value: d.value }));
+    // The 2025-26 season only (observed data now continues into 2026-27).
     const showFrom = new Date("2025-11-01T00:00:00");
-    const recentObs = observed.filter(d => d.date >= showFrom);
+    const showUntil = new Date("2026-07-31T00:00:00");
+    const recentObs = observed.filter(d => d.date >= showFrom && d.date <= showUntil);
 
     // Trajectory data for selected ref date
     const refTrajData = evalTrajData?.data?.[refDate];
@@ -1075,7 +1273,7 @@ function drawEvalTrajectories() {
 
     axesG.append("text")
         .attr("transform", "rotate(-90)")
-        .attr("x", -innerH / 2).attr("y", -48)
+        .attr("x", -innerH / 2).attr("y", -60)
         .attr("text-anchor", "middle").attr("font-family", EVAL_FONT)
         .attr("font-size", "12px").attr("fill", "#666")
         .text("Weekly Hospitalizations");

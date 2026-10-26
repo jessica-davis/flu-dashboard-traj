@@ -1,64 +1,68 @@
 // Main entry point — app state, data loading, initialization
 
+const DEFAULT_LOCATION = "US";
+
 const AppState = {
-    currentTab: "trend",
+    currentSeason: null,      // e.g. "2026-27" (see season.js)
+    surveillanceOnly: false,  // true when the season has no forecasts yet
+    currentPage: "now",       // tab: "now" (activity, trend) | "season" (onset, peak)
+    mapView: "activity",      // gauge the map is colored by
+    currentTab: "activity",   // chart emphasis; follows mapView
     currentEstimate: "most_likely",
     currentRefDate: null,
+    // Date the "Data as reported" snapshot is taken as of. null follows
+    // the selected forecast; clicking the chart sets it to any week.
+    vintageAsOf: null,
     currentHorizon: 0,
-    selectedState: "US",
-    admissionsRate: "total" // "total" or "percapita"
+    selectedState: DEFAULT_LOCATION,
 };
 
 let dashboardData = null;
 let locationsData = null;
 let topoData = null;
-let usTrajData = null;
 let targetDataAll = null;
 let activityThresholds = null;
+let peakWeekData = null;
 
 async function init() {
     try {
-        const [dd, ld, td, ut, tgt, at] = await Promise.all([
-            d3.json("data/dashboard_data.json"),
-            d3.json("data/locations.json"),
+        // Resolve the active season (from ?season= or the manifest default)
+        // and wire the header dropdown before loading per-season data.
+        await bootSeasonHeader();
+        const season = seasonMeta.name;
+        AppState.currentSeason = season;
+        AppState.surveillanceOnly = !seasonMeta.has_forecasts;
+
+        const [dd, ld, td, tgt, at, pw] = await Promise.all([
+            d3.json(seasonDataPath(season, "dashboard_data.json")).catch(() => null),
+            d3.json(dataUrl("data/locations.json")),
             d3.json("data/us-states.json"),
-            d3.json("data/trajectories/US.json"),
-            d3.json("data/target_data.json"),
-            d3.json("data/activity_thresholds.json")
+            d3.json(dataUrl("data/target_data.json")),
+            d3.json(dataUrl("data/activity_thresholds.json")),
+            d3.json(seasonDataPath(season, "peak_week.json")).catch(() => null),
         ]);
 
-        dashboardData = dd;
+        dashboardData = dd || { reference_dates: [], data: {}, onset: {} };
         locationsData = ld;
         topoData = td;
-        usTrajData = ut;
         targetDataAll = tgt;
         activityThresholds = at;
+        peakWeekData = pw;
 
-        // Auto-detect most recent reference date
-        AppState.currentRefDate = dashboardData.most_recent_reference_date;
+        AppState.currentRefDate = dashboardData.most_recent_reference_date || null;
+        if (!AppState.currentRefDate) AppState.surveillanceOnly = true;
 
-        // Display last-updated timestamp (Wednesday of the reference date week)
-        const lastUpdatedEl = document.getElementById("last-updated");
-        if (lastUpdatedEl && AppState.currentRefDate) {
-            const refSat = new Date(AppState.currentRefDate + "T00:00:00");
-            // Reference date is Saturday; Wednesday of that week is 3 days earlier
-            const wed = new Date(refSat);
-            wed.setDate(wed.getDate() - 3);
-            const months = ["Jan", "Feb", "Mar", "Apr", "May", "Jun",
-                "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"];
-            const formatted = `${months[wed.getMonth()]} ${wed.getDate()}, ${wed.getFullYear()}`;
-            lastUpdatedEl.textContent = `\u00A0\u00A0|\u00A0\u00A0Last Updated: ${formatted}`;
-        }
-
-        // Initialize components
         initControls();
+        initRefDateDropdown();
+        initPanels();
         initMap(topoData);
         initLegend();
-        initGauges();
         initTrajectoryChart();
         initInfoButtons();
 
-        // Initial render
+        if (AppState.surveillanceOnly) applyNoForecastLayout();
+
+        updateLastUpdatedLabel();
         updateAll();
 
     } catch (err) {
@@ -72,37 +76,123 @@ async function init() {
     }
 }
 
-function updateAll() {
-    updateMapColors();
-    updateGauges();
-    updateLegend();
+// A season whose forecasts have not started. The page keeps the same shape as
+// a season with forecasts and each gauge explains what is missing.
+function applyNoForecastLayout() {
+    document.body.classList.add("no-forecast");
+
+    const prev = latestSeasonWithForecasts(seasonManifest, seasonMeta.name);
+    const through = seasonMeta.observed_through;
+    const lines = {
+        activity: "Activity level forecasts will appear here once the season's first forecast is issued.",
+        trend: "Trend forecasts (decrease, stable or increase) will appear here once forecasting begins.",
+        onset: "The chance the season has started will appear here once forecasting begins.",
+        peak: "Peak-week estimates will appear here once forecasting begins.",
+    };
+    Object.entries(lines).forEach(([view, text]) => {
+        const p = document.getElementById(`sentence-${view}`);
+        if (p) p.innerHTML = `<span class="panel-empty-line">${text}</span>`;
+    });
+    const first = document.getElementById("sentence-activity");
+    if (first) {
+        first.innerHTML =
+            `<strong>No forecast yet for ${seasonMeta.name}.</strong> ${lines.activity}` +
+            (through ? ` Surveillance data through ${formatLongDateStr(through)}.` : "") +
+            (prev ? ` <a href="index.html?season=${encodeURIComponent(prev.name)}">View the ${prev.name} season</a>.` : "");
+    }
+    if (typeof setForecastControlsEnabled === "function") setForecastControlsEnabled(false);
+    const tourBtn = document.getElementById("tour-btn");
+    if (tourBtn) tourBtn.style.display = "none";
 }
 
-// Reset to most recent forecast and scroll to top
+function updateAll() {
+    updateMapColors();
+    updateLegend();
+    if (AppState.surveillanceOnly) return;  // the panels need a reference date
+    updatePanels();
+}
+
+// Make `fips` the location the panel and chart describe.
+function selectLocation(fips) {
+    if (!fips || fips === AppState.selectedState) return;
+    AppState.selectedState = fips;
+    updateAll();
+    setTrajectoryLocation(fips);
+}
+
+function updateLastUpdatedLabel() {
+    const el = document.getElementById("last-updated");
+    if (!el) return;
+    if (AppState.surveillanceOnly) {
+        const through = seasonMeta?.observed_through;
+        el.textContent = through
+            ? `  |  Surveillance data through ${formatLongDateStr(through)}`
+            : `  |  ${seasonMeta.name} season: no data reported yet`;
+        return;
+    }
+    if (!AppState.currentRefDate) return;
+    // Reference date is Saturday; Wednesday of that week is 3 days earlier.
+    const refSat = new Date(AppState.currentRefDate + "T00:00:00");
+    const wed = new Date(refSat);
+    wed.setDate(wed.getDate() - 3);
+    const months = ["Jan", "Feb", "Mar", "Apr", "May", "Jun",
+        "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"];
+    const formatted = `${months[wed.getMonth()]} ${wed.getDate()}, ${wed.getFullYear()}`;
+    const isMostRecent = AppState.currentRefDate === dashboardData.most_recent_reference_date;
+    const label = isMostRecent ? "Last Updated" : "Forecast issued";
+    el.textContent = `  |  ${label}: ${formatted}`;
+}
+
+// --- Reference date (previous forecast) dropdown ---------------------------
+
+function initRefDateDropdown() {
+    const select = document.getElementById("ref-date-select");
+    if (!select) return;
+
+    const dates = [...(dashboardData.reference_dates || [])].sort().reverse();
+    select.innerHTML = "";
+    if (dates.length === 0) return;  // no forecasts yet; the group is hidden in surveillance mode
+    dates.forEach((d, i) => {
+        const opt = document.createElement("option");
+        opt.value = d;
+        opt.textContent = i === 0 ? `${d} (most recent)` : d;
+        select.appendChild(opt);
+    });
+    select.value = AppState.currentRefDate;
+
+    select.addEventListener("change", () => {
+        AppState.currentRefDate = select.value;
+        AppState.vintageAsOf = null;   // snapshot follows the chosen forecast again
+        AppState.currentHorizon = 0;
+        buildDateButtons();
+        updateLastUpdatedLabel();
+        updateAll();
+        drawTrajectories();
+    });
+}
+
+// Reset to the most recent forecast for the United States and scroll to top
 function jumpToMostRecent() {
-    if (!dashboardData) return;
+    if (!dashboardData?.most_recent_reference_date) return;
     AppState.currentRefDate = dashboardData.most_recent_reference_date;
+    AppState.vintageAsOf = null;
     AppState.currentHorizon = 0;
     AppState.currentEstimate = "most_likely";
-    AppState.currentTab = "trend";
-    AppState.admissionsRate = "total";
-    AppState.selectedState = "US";
+    AppState.currentPage = "now";
+    d3.selectAll(".estimate-seg").classed("active", function () { return this.dataset.estimate === "most_likely"; });
+    showTab("now");
 
-    // Reset UI controls
-    d3.selectAll(".tab").classed("active", false);
-    d3.select('.tab[data-tab="trend"]').classed("active", true);
-    d3.selectAll(".estimate-seg").classed("active", false);
-    d3.select('.estimate-seg[data-estimate="most_likely"]').classed("active", true);
-    d3.selectAll(".rate-btn").classed("active", false);
-    d3.select('.rate-btn[data-rate="total"]').classed("active", true);
-    updateRateToggleVisibility();
+    const select = document.getElementById("ref-date-select");
+    if (select) select.value = AppState.currentRefDate;
 
     buildDateButtons();
-    updateAll();
-    drawTrajectories();
+    updateLastUpdatedLabel();
+    const moved = AppState.selectedState !== DEFAULT_LOCATION;
+    AppState.selectedState = DEFAULT_LOCATION;
+    setMapView("activity");
+    if (moved) setTrajectoryLocation(DEFAULT_LOCATION);
 
     window.scrollTo({ top: 0, behavior: "smooth" });
 }
 
-// Start the app
 init();

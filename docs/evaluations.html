@@ -4,7 +4,11 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Evaluations — Influenza Hospitalization Forecast</title>
-    <link rel="stylesheet" href="css/style.css">
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Libre+Franklin:wght@400;500;600;700&family=Source+Serif+4:opsz,wght@8..60,400;8..60,600;8..60,700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="css/dashboard.css">
+    <link rel="stylesheet" href="css/evaluations.css">
     <script src="https://d3js.org/d3.v7.min.js"></script>
     <script src="https://d3js.org/topojson.v3.min.js"></script>
 </head>
@@ -13,12 +17,12 @@
         <div class="header-row">
             <div>
                 <h1>Influenza Hospitalization Forecast</h1>
-                <p class="subtitle">Weekly forecasts of the EpyStrain model <span class="last-updated" id="eval-last-updated"></span></p>
+                <p class="subtitle">How the EpyStrain model's 2025-26 forecasts scored <span class="last-updated" id="eval-last-updated"></span></p>
             </div>
             <nav class="header-nav">
                 <a class="nav-link" href="index.html">Dashboard</a>
                 <a class="nav-link active" href="evaluations.html">Evaluations</a>
-                <a class="nav-link" href="about.html">About</a>
+                <a class="nav-link" href="methods.html">Methods</a>
             </nav>
         </div>
     </header>
@@ -77,6 +81,24 @@
             </div>
         </div>
 
+        <!-- Prediction-interval coverage section -->
+        <hr class="section-divider">
+        <h2 class="section-title">Prediction Interval Coverage <button class="info-btn" data-info="eval-coverage" aria-label="Info">i</button></h2>
+        <p class="eval-subtitle">How often observations fall inside the model's central prediction intervals. Points on the 45° line are perfectly calibrated; points below the line mean the intervals are too narrow (overconfident).</p>
+
+        <div class="card eval-coverage-card">
+            <div class="eval-coverage-row">
+                <div class="eval-calib-area">
+                    <div class="eval-calib-scope" id="eval-calib-scope"></div>
+                    <svg id="eval-calib-chart"></svg>
+                </div>
+                <div class="eval-coverage-table-area">
+                    <table class="eval-coverage-table" id="eval-coverage-table"></table>
+                    <p class="eval-coverage-note">Aggregated over the same reference-date window selected above. Hover a state on the map to see its coverage; move away for the all-states pooled curve.</p>
+                </div>
+            </div>
+        </div>
+
         <!-- Trajectory section -->
         <hr class="section-divider">
         <h2 class="section-title">Trajectory Evaluation</h2>
@@ -117,7 +139,8 @@
     </main>
 
     <footer class="funding-footer">
-        This work was supported by xxxx
+        <img class="footer-logo" src="img/epistorm-logo.svg" alt="EpiSTORM">
+        <p>This work is supported by Cooperative Agreements NU38PW000005 from The Centers for Disease Control and Prevention (CDC) and CSTE and from CDC-RFA-FT-23-0069 from the CDC's Center for Forecasting and Outbreak Analytics.</p>
     </footer>
 
     <!-- Tooltip -->

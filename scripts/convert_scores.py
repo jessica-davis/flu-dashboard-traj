@@ -12,6 +12,9 @@ wis = pd.read_csv(SCORES_DIR / "epystrain_WIS_dat.csv")
 baseline_es = pd.read_csv(SCORES_DIR / "baseline_energyscore_dat.csv")
 baseline_wis = pd.read_csv(SCORES_DIR / "baseline_WIS_dat.csv")
 
+# Empirical coverage is model-only (no baseline), in steps of 10%.
+COVERAGE_LEVELS = [10, 20, 30, 40, 50, 60, 70, 80, 90]
+
 merged = es.merge(wis, on=["location", "reference_date", "location_name"], how="outer")
 baseline_es = baseline_es.rename(columns={
     "energyscore": "baseline_energyscore",
@@ -25,9 +28,11 @@ merged = merged.merge(baseline_es, on=["location", "reference_date", "location_n
 merged = merged.merge(baseline_wis, on=["location", "reference_date", "location_name"], how="outer")
 
 # Round floats for smaller file size
-for col in ["energyscore", "energyscore_norm", "WIS", "WIS_norm",
-            "baseline_energyscore", "baseline_energyscore_norm",
-            "baseline_WIS", "baseline_WIS_norm"]:
+round_cols = ["energyscore", "energyscore_norm", "WIS", "WIS_norm",
+              "baseline_energyscore", "baseline_energyscore_norm",
+              "baseline_WIS", "baseline_WIS_norm"]
+round_cols += [f"coverage_{lvl}" for lvl in COVERAGE_LEVELS]
+for col in round_cols:
     if col in merged.columns:
         merged[col] = merged[col].round(4)
 

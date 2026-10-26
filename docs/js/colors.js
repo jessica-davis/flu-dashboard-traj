@@ -12,11 +12,11 @@ const TREND_COLORS = {
 const TREND_ORDER = ["large_decrease", "decrease", "stable", "increase", "large_increase"];
 
 const TREND_LABELS = {
-    large_decrease: "Large Decrease",
-    decrease: "Decrease",
+    large_decrease: "Sharply Decreasing",
+    decrease: "Decreasing",
     stable: "Stable",
-    increase: "Increase",
-    large_increase: "Large Increase"
+    increase: "Increasing",
+    large_increase: "Sharply Increasing"
 };
 
 // Activity colors
@@ -78,12 +78,18 @@ const ACTIVITY_BAND_COLORS = {
     very_high: "rgba(77, 104, 145, 0.35)"
 };
 
-// Historical season colors for "Add Context" (more distinct)
-const SEASON_COLORS = {
-    "2022-23": "#E07B54",
-    "2023-24": "#7B68AE",
-    "2024-25": "#4A9A6F"
-};
+// Line styles for the "Compare to Previous Seasons" overlay. Assigned by a
+// season's position (oldest first) in the previous-seasons list for the active
+// season, so 2022-23 / 2023-24 / 2024-25 keep their original colors when
+// viewing 2025-26, and 2025-26 takes the fourth style when viewing 2026-27.
+const SEASON_PALETTE = [
+    { color: "#E07B54", dash: "8,4",     width: 2 },
+    { color: "#7B68AE", dash: "4,4",     width: 2 },
+    { color: "#4A9A6F", dash: "2,3",     width: 2 },
+    { color: "#C9840A", dash: "6,2,2,2", width: 2 },
+    { color: "#3A7BA0", dash: "1,3",     width: 2 },
+    { color: "#B5566B", dash: "10,3",    width: 2 },
+];
 
 // Classify a raw hospitalization value into an activity level using thresholds
 function classifyActivity(value, fips) {
@@ -96,33 +102,45 @@ function classifyActivity(value, fips) {
     return "low";
 }
 
-// Compute activity probability distribution from trajectory values at a given horizon
-function computeActivityProbsFromTrajs(trajFileData, refDate, horizon, fips) {
-    if (typeof activityThresholds === "undefined" || !activityThresholds) return null;
-    const th = activityThresholds[fips];
-    if (!th || !trajFileData?.data?.[refDate]) return null;
+// Season-start sequential color scale: probability the flu season has started
+// (weekly ED visits at/above the MEM epidemic threshold). Pale = unlikely
+// started; deep blue = very likely started. Deliberately not red/orange.
+const SEASON_START_SEQ = d3.scaleSequential(d3.interpolateBlues).domain([0, 1]).clamp(true);
 
-    const rdData = trajFileData.data[refDate];
-    const valueIdx = horizon; // horizon h maps to dates[h] / values[h]
-    const trajs = rdData.trajectories;
-    const counts = { low: 0, moderate: 0, high: 0, very_high: 0 };
-    let total = 0;
-
-    trajs.forEach(t => {
-        const val = t.values[valueIdx];
-        if (val == null) return;
-        total++;
-        if (val >= th.very_high) counts.very_high++;
-        else if (val >= th.high) counts.high++;
-        else if (val >= th.moderate) counts.moderate++;
-        else counts.low++;
-    });
-
-    if (total === 0) return null;
-    return {
-        low: counts.low / total,
-        moderate: counts.moderate / total,
-        high: counts.high / total,
-        very_high: counts.very_high / total
-    };
+function seasonStartColor(p) {
+    return (p == null) ? NO_DATA_COLOR : SEASON_START_SEQ(p);
 }
+
+// Solid fill used once the season is confirmed started (observed crossing) — a
+// flat "started" state, deliberately not a probability shade.
+const SEASON_STARTED_COLOR = "#3B6EA5";
+
+// Peak-week sequential color scale. The domain is the full chronological list of
+// candidate forecast weeks for a location (peak_week.json `_domain`), so a given
+// calendar week maps to the same color across submissions. Earlier weeks render
+// dark, later weeks bright.
+let _weekScaleCache = {};
+
+function getWeekColorScale(location) {
+    const domain = (typeof peakWeekData !== "undefined" && peakWeekData
+        && peakWeekData._domain && peakWeekData._domain[location]) || [];
+    const cached = _weekScaleCache[location];
+    if (cached && cached.domain.length === domain.length) return cached;
+
+    const indexOf = {};
+    domain.forEach((d, i) => { indexOf[d] = i; });
+    const seq = d3.scaleSequential(d3.interpolateViridis).domain([0, Math.max(1, domain.length - 1)]);
+    const scale = {
+        domain,
+        indexOf,
+        colorByIndex: i => seq(i),
+        color: dateStr => (indexOf[dateStr] == null ? NO_DATA_COLOR : seq(indexOf[dateStr])),
+    };
+    if (domain.length) _weekScaleCache[location] = scale;
+    return scale;
+}
+
+function weekColor(location, dateStr) {
+    return getWeekColorScale(location).color(dateStr);
+}
+

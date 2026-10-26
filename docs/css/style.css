@@ -540,6 +540,74 @@ h1 {
     margin-top: 4px;
 }
 
+/* --- About page --- */
+.about-page {
+    max-width: 760px;
+    margin: 32px auto 60px;
+    padding: 0 20px;
+    font-family: "Helvetica Neue", Arial, sans-serif;
+    color: #333;
+    line-height: 1.6;
+}
+.about-page h2 {
+    font-size: 22px;
+    font-weight: 700;
+    margin: 24px 0 8px;
+    color: #1a1a1a;
+}
+.about-page h3 {
+    font-size: 16px;
+    font-weight: 600;
+    margin: 22px 0 4px;
+    color: #1a1a1a;
+}
+.about-page p {
+    font-size: 15px;
+    margin: 6px 0;
+}
+.about-page .about-cite {
+    font-size: 12px;
+    color: #888;
+    border-left: 3px solid #eee;
+    padding-left: 12px;
+    margin-top: 8px;
+}
+
+/* --- Seasonal side panel (Season Start/End, Peak Week, Peak Size) --- */
+.seasonal-panel-container {
+    margin-top: 4px;
+}
+.seasonal-panel-container svg {
+    display: block;
+}
+.seasonal-panel-title {
+    margin-bottom: 6px;
+}
+.seasonal-panel-title-main {
+    font-family: "Helvetica Neue", Arial, sans-serif;
+    font-size: 12px;
+    font-weight: 600;
+    color: #555;
+}
+.seasonal-panel-title-sub {
+    font-family: "Helvetica Neue", Arial, sans-serif;
+    font-size: 12px;
+    color: #333;
+    margin-top: 2px;
+}
+.seasonal-panel-note {
+    font-family: "Helvetica Neue", Arial, sans-serif;
+    font-size: 10px;
+    color: #888;
+    margin-top: 4px;
+}
+.tooltip-sub {
+    font-family: "Helvetica Neue", Arial, sans-serif;
+    font-size: 11px;
+    color: #444;
+    margin: 2px 0;
+}
+
 .gauge-wrapper {
     text-align: center;
 }
@@ -1708,6 +1776,88 @@ h1 {
 .eval-hover-chart svg {
     width: 100%;
     height: auto;
+}
+
+/* --- Prediction-interval coverage section --- */
+
+.eval-coverage-card {
+    padding: 16px;
+}
+
+.eval-coverage-row {
+    display: flex;
+    gap: 24px;
+    align-items: flex-start;
+    flex-wrap: wrap;
+}
+
+.eval-calib-area {
+    flex: 0 0 auto;
+}
+
+.eval-calib-area svg {
+    width: 360px;
+    max-width: 100%;
+    height: auto;
+}
+
+.eval-calib-scope {
+    font-family: "Helvetica Neue", Arial, sans-serif;
+    font-size: 12px;
+    font-weight: 600;
+    color: #555;
+    margin-bottom: 6px;
+    min-height: 16px;
+}
+
+.eval-coverage-table-area {
+    flex: 1;
+    min-width: 260px;
+}
+
+.eval-coverage-table {
+    border-collapse: collapse;
+    font-family: "Helvetica Neue", Arial, sans-serif;
+    font-size: 12px;
+    width: 100%;
+}
+
+.eval-coverage-table th,
+.eval-coverage-table td {
+    padding: 6px 10px;
+    text-align: right;
+    border-bottom: 1px solid #eee;
+}
+
+.eval-coverage-table th:first-child,
+.eval-coverage-table td:first-child {
+    text-align: left;
+}
+
+.eval-coverage-table thead th {
+    font-size: 11px;
+    font-weight: 600;
+    text-transform: uppercase;
+    letter-spacing: 0.4px;
+    color: #999;
+    border-bottom: 1px solid #ccc;
+}
+
+.eval-coverage-table .cov-swatch {
+    display: inline-block;
+    width: 10px;
+    height: 10px;
+    border-radius: 2px;
+    margin-right: 6px;
+    vertical-align: middle;
+}
+
+.eval-coverage-note {
+    font-family: "Helvetica Neue", Arial, sans-serif;
+    font-size: 11px;
+    color: #999;
+    line-height: 1.5;
+    margin-top: 12px;
 }
 
 /* --- Trajectory section --- */

@@ -5,7 +5,7 @@ const TOUR_STEPS = [
         selectors: ["#tab-bar", ".card-map"],
         infoKey: "map",
         title: "Dashboard Views & Map",
-        text: "Switch between three views: <strong>Influenza Trend</strong>, <strong>Influenza Activity</strong>, and <strong>Weekly Hospital Admissions</strong> to see the forecast levels within each state. Hover over a state to see detailed forecast information, and click a state to jump to its trajectory forecast below.",
+        text: "Switch between views: <strong>Influenza Trend</strong>, <strong>Influenza Activity</strong>, <strong>Weekly Hospital Admissions</strong>, <strong>Season Start / End</strong>, <strong>Peak Week</strong>, and <strong>Peak Size</strong> to see the forecast within each state. Hover over a state to see detailed forecast information, and click a state to jump to its trajectory forecast below.",
         position: "bottom",
         wide: true,
         dropdown: {
@@ -51,6 +51,41 @@ const TOUR_STEPS = [
                         "Hover over a state to see the four-week-ahead forecasted hospitalization time series with different prediction intervals " +
                         "(these 4 weeks correspond to the Forecast Week dates at the bottom of the map). " +
                         "There is a vertical line over the horizon that is selected in the forecast week selector which represents what values the states are colored by."
+                },
+                {
+                    title: "Season Start / End",
+                    body: "This view estimates when the influenza season <em>starts</em> and <em>ends</em>, using the epidemic-threshold " +
+                        "definition of season onset from the Moving Epidemic Method (MEM). The season <strong>starts</strong> the first week that " +
+                        "activity crosses the <strong>epidemic threshold</strong> (the level separating baseline from epidemic activity, taken here " +
+                        "as the boundary of the Medium activity level). An elevated week later in the season, on the way back down, is <em>not</em> an onset.<br><br>" +
+                        "For each sample trajectory, the onset week is its first forecast week at or above the epidemic threshold. " +
+                        "Per forecast week, the <strong style=\"color:#2171b5\">start probability</strong> is cumulative — the share of trajectories that have " +
+                        "crossed the threshold on or before that week — so it only ever increases. We first scan the reported observations for the current " +
+                        "season (from about Aug 1): if the season has <em>already</em> crossed the threshold, the view reports the week it started; otherwise it " +
+                        "shows the forward start probability. A late-season dip back below threshold never resets onset.<br><br>" +
+                        "The map is colored in <strong style=\"color:#2171b5\">blue</strong> by the probability the season has started. Once that probability " +
+                        "exceeds 75% (or the season has already started in the observations), the state switches to <strong style=\"color:#238b45\">green</strong>, " +
+                        "colored by the probability the season has <em>ended</em> (all trajectories fallen back below the epidemic threshold). Use the Forecast Week " +
+                        "selector to move through the season.<br><br>" +
+                        "<em style=\"font-size:11px;color:#888;\">Vega T, Lozano JE, Meerhoff T, et al. Influenza surveillance in Europe: establishing epidemic thresholds by the moving " +
+                        "epidemic method. <i>Influenza and Other Respiratory Viruses</i>. 2013;7(4):546–558. MEM is the epidemic-threshold method recommended in the " +
+                        "WHO Pandemic Influenza Severity Assessment (PISA) guidance and used by WHO Europe / ECDC.</em>"
+                },
+                {
+                    title: "Peak Week",
+                    body: "This view shows <em>when</em> the season is most likely to peak. For each state, every sample trajectory's peak week is the " +
+                        "forecast week at which that trajectory reaches its maximum value (across every horizon available; ties resolve to the earliest week). " +
+                        "The peak-week distribution is the share of trajectories peaking in each week.<br><br>" +
+                        "The map is colored by the number of weeks until the <strong>most likely</strong> peak week; the Uncertainty control switches between the " +
+                        "most likely, earlier (10th percentile), and later (90th percentile) peak week. States that have most likely <strong>already peaked</strong> are " +
+                        "shown in a distinct slate color. Hover over a state to see the full peak-week distribution."
+                },
+                {
+                    title: "Peak Size",
+                    body: "This view shows <em>how large</em> the seasonal peak is likely to be. For each state, each sample trajectory's peak height is its " +
+                        "maximum weekly hospital admissions across all horizons. The distribution of those peak heights is binned into nice-rounded ranges.<br><br>" +
+                        "The map is colored by the most likely peak size; the Uncertainty control switches between the modal peak, a lower (10th percentile) and an " +
+                        "upper (90th percentile) peak height. Hover over a state to see the full binned distribution of peak heights."
                 }
             ]
         }

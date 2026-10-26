@@ -1,0 +1,5 @@
+{
+  "_comment": "States left out of a forecast, by reference date (the Saturday the forecast is for). Applied by scripts/csv_to_parquet.py; those states show as 'no forecast' for that week. Names match data/processed/locations.parquet.",
+  "2026-10-10": ["California", "Hawaii", "Florida", "Washington", "Louisiana", "Nevada"],
+  "2026-10-17": ["California", "Hawaii", "Louisiana", "Washington"]
+}

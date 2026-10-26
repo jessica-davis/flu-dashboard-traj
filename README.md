@@ -2,13 +2,26 @@
 
 Static dashboard visualizing EpyStrain trajectory forecasts alongside the FluSight-Baseline, with WIS and Energy Score evaluations. Published from [`docs/`](docs/) via Netlify.
 
-## Adding a new reference date
+## Adding a new reference date (2026-27 season)
 
-When a new trajectory parquet is ready:
+When a new weekly trajectory file is ready:
 
-1. Drop the file into [`raw/multistrain_retrospective_trajectories/`](raw/multistrain_retrospective_trajectories/) using the naming convention `epystrain_trajectories_YYYY-MM-DD.parquet`.
-2. Run the update commands below (all 5 steps, in order).
-3. Commit and push — Netlify will redeploy from `main`.
+1. Drop it into [`raw/2026-27/`](raw/2026-27/) as delivered (`long_form_trajectories_{YYYYWW}_*.parquet`, one reference date per file). Raw folders and their formats are listed in `SOURCES` in [`scripts/csv_to_parquet.py`](scripts/csv_to_parquet.py).
+2. If any states should be left out of that week's forecast, list them under its reference date (the Saturday) in [`data/exclusions.json`](data/exclusions.json).
+3. Refresh observed data and rebuild the dashboard:
+   ```bash
+   source .venv/bin/activate
+   python scripts/fetch_flusight_target_data.py   # observed + as-reported data from cdcepi/FluSight-forecast-hub
+   python scripts/csv_to_parquet.py
+   python scripts/preprocess.py
+   ```
+4. Commit and push — Netlify will redeploy from `main`.
+
+`fetch_flusight_target_data.py` reads `target-data/time-series.csv` from the `upstream` remote of a FluSight-forecast-hub clone next to this repo (`git fetch` + `git show`, so the clone's working tree is never touched). It writes `data/processed/target_data.parquet` (latest value per week) and `target_vintages.parquet` (every weekly snapshot, for the chart's "Data as reported" layer).
+
+Seasons are defined in [`scripts/seasons.py`](scripts/seasons.py): a season runs from the first Saturday on/after Aug 1. Reference dates are grouped into seasons automatically; each selectable season gets `docs/data/seasons/{season}/` and appears in the Season dropdown. Activity levels and the season-start (epidemic) threshold come from [`data/threshold_levels.csv`](data/threshold_levels.csv) (MEM), written to `docs/data/activity_thresholds.json` on every run.
+
+The evaluation steps below (3–5) still score the 2025-26 retrospective files.
 
 ## Updating the dashboard
 
@@ -38,12 +51,11 @@ Reads raw parquets from `raw/multistrain_retrospective_trajectories/`, maps loca
 python scripts/preprocess.py
 ```
 
-Reads from `data/processed/` (trajectories, locations, target data, thresholds) and writes the JSON files the main dashboard and trajectory pages use:
-- `docs/data/dashboard_data.json`
-- `docs/data/locations.json`
-- `docs/data/target_data.json`
-- `docs/data/historical_seasons.json`
-- `docs/data/trajectories/{fips}.json` (one per state)
+Reads from `data/processed/` (trajectories, locations, target data and vintages) and `data/threshold_levels.csv`, and writes the JSON files the dashboard and Methods pages use:
+- `docs/data/seasons.json`, `locations.json`, `target_data.json`, `historical_seasons.json`, `activity_thresholds.json`
+- `docs/data/seasons/{season}/dashboard_data.json` and `peak_week.json`
+- `docs/data/seasons/{season}/trajectories/{fips}.json` (quantiles + 200 sampled trajectories)
+- `docs/data/seasons/{season}/vintages/{fips}.json` (data as reported each week)
 
 ### Step 3 — Compute evaluation scores
 

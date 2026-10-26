@@ -1,0 +1,3237 @@
+:root {
+    --font: "Libre Franklin", "Franklin Gothic Medium", "Helvetica Neue", Arial, sans-serif;
+    --font-serif: "Source Serif 4", Georgia, "Times New Roman", serif;
+    --fs-xs: 11px;
+    --fs-sm: 12px;
+    --fs-md: 13px;
+    --fs-lg: 15px;
+    --fs-xl: 18px;
+    --fs-title: 24px;
+    --accent: #2f6690;
+    --banner: #24405f;
+}
+
+/* =============================================
+   Boston Flu Forecasts — NYT-style CSS
+   ============================================= */
+
+/* "In Development" banner (evaluations page stub) */
+.dev-banner {
+    background: #fff3cd;
+    border: 1px solid #ffe69c;
+    color: #664d03;
+    padding: 20px 24px;
+    border-radius: 8px;
+    text-align: center;
+    font-size: 1.05em;
+    line-height: 1.5;
+    margin: 16px 0 24px;
+}
+
+/* Summary card — single-location replacement for the choropleth */
+.location-summary {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    width: 100%;
+    min-height: 300px;
+    padding: 16px;
+}
+.summary-card {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 14px;
+    padding: 24px 32px;
+    border: 1px solid #e5e5e5;
+    border-radius: 10px;
+    background: #fff;
+    max-width: 480px;
+    width: 100%;
+}
+.summary-location {
+    font-family: var(--font);
+    font-size: 1.4em;
+    font-weight: 600;
+    color: #1a1a1a;
+}
+.summary-chip {
+    display: inline-block;
+    padding: 6px 14px;
+    border-radius: 999px;
+    font-family: var(--font);
+    font-size: 0.95em;
+    font-weight: 500;
+    color: #fff;
+    text-shadow: 0 0 2px rgba(0, 0, 0, 0.25);
+}
+.summary-metrics {
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+    width: 100%;
+    font-family: var(--font);
+    font-size: 0.92em;
+}
+.summary-metrics > div {
+    display: grid;
+    grid-template-columns: 1fr auto;
+    grid-template-rows: auto auto;
+    gap: 0 12px;
+    padding: 8px 0;
+    border-top: 1px solid #f0f0f0;
+}
+.summary-metrics > div:first-child {
+    border-top: none;
+}
+.summary-metrics .label {
+    color: #888;
+    font-size: 0.88em;
+    grid-column: 1;
+}
+.summary-metrics .value {
+    color: #1a1a1a;
+    font-weight: 600;
+    grid-column: 2;
+    grid-row: 1;
+    text-align: right;
+}
+.summary-metrics .sub {
+    color: #888;
+    font-size: 0.78em;
+    grid-column: 2;
+    grid-row: 2;
+    text-align: right;
+}
+.summary-empty {
+    color: #999;
+    font-family: var(--font);
+    font-style: italic;
+}
+
+* {
+    margin: 0;
+    padding: 0;
+    box-sizing: border-box;
+}
+
+body {
+    font-family: var(--font);
+    font-size: var(--fs-md);
+    background: #f7f7f7;
+    color: #333;
+    max-width: 1280px;
+    margin: 0 auto;
+    padding: 10px 24px 28px;
+    -webkit-font-smoothing: antialiased;
+}
+
+/* --- Header --- */
+header {
+    margin-bottom: 10px;
+    padding-bottom: 10px;
+    border-bottom: 1px solid #ddd;
+}
+
+.header-row {
+    display: flex;
+    justify-content: space-between;
+    align-items: flex-start;
+}
+
+svg text {
+    font-family: var(--font);
+}
+
+h1 {
+    font-family: var(--font-serif);
+    font-size: 26px;
+    font-weight: 700;
+    color: #121212;
+    letter-spacing: -0.3px;
+    line-height: 1.2;
+}
+
+.subtitle {
+    font-family: var(--font);
+    font-size: 13px;
+    color: #888;
+    margin-top: 3px;
+    font-weight: 400;
+}
+
+.last-updated {
+    font-size: 12px;
+    color: #999;
+    font-weight: 400;
+}
+
+.most-recent-btn {
+    font-family: var(--font);
+    font-size: 11px;
+    font-weight: 500;
+    color: #777;
+    background: none;
+    border: none;
+    border-left: 1px solid #ccc;
+    margin-left: 8px;
+    padding: 0 0 0 8px;
+    cursor: pointer;
+    transition: color 0.12s ease;
+    vertical-align: baseline;
+    text-decoration: underline;
+    text-decoration-color: #ccc;
+    text-underline-offset: 2px;
+}
+
+.most-recent-btn:hover {
+    color: #1a1a1a;
+    text-decoration-color: #999;
+}
+
+.tour-btn {
+    font-family: var(--font);
+    font-size: 13px;
+    font-weight: 600;
+    padding: 7px 16px;
+    border: 1.5px solid #1a1a1a;
+    border-radius: 5px;
+    background: #fff;
+    color: #1a1a1a;
+    cursor: pointer;
+    transition: all 0.15s ease;
+    white-space: nowrap;
+}
+
+.header-buttons {
+    display: flex;
+    gap: 8px;
+    margin-top: 4px;
+}
+
+.tour-btn:hover {
+    background: #1a1a1a;
+    color: #fff;
+}
+
+.header-nav {
+    display: flex;
+    gap: 20px;
+    align-items: center;
+    padding-top: 7px;
+}
+
+.nav-link {
+    font-family: var(--font);
+    font-size: 15px;
+    font-weight: 500;
+    color: #555;
+    text-decoration: none;
+    transition: color 0.15s ease;
+}
+
+.nav-link:hover {
+    color: #1a1a1a;
+}
+
+.nav-link.active {
+    color: #1a1a1a;
+    font-weight: 600;
+}
+
+/* --- Season picker (header) --- */
+.season-picker {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    margin-right: 4px;
+    padding-right: 20px;
+    border-right: 1px solid #ddd;
+    font-family: var(--font);
+}
+
+.season-picker-label {
+    font-size: 11px;
+    font-weight: 600;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+    color: #888;
+}
+
+.season-select {
+    font-family: inherit;
+    font-size: 13px;
+    font-weight: 500;
+    padding: 4px 8px;
+    border: 1px solid #ccc;
+    border-radius: 4px;
+    background: #fff;
+    color: #1a1a1a;
+    cursor: pointer;
+}
+
+.season-select:focus {
+    outline: none;
+    border-color: #4682B4;
+    box-shadow: 0 0 0 2px rgba(70, 130, 180, 0.2);
+}
+
+/* --- Season notice (season with no forecasts yet) --- */
+.season-notice {
+    display: none;
+    padding: 28px 32px;
+    margin-bottom: 16px;
+    font-family: var(--font);
+}
+
+.season-notice-title {
+    font-size: 18px;
+    font-weight: 600;
+    color: #1a1a1a;
+    margin-bottom: 8px;
+}
+
+.season-notice-text {
+    font-size: 14px;
+    color: #555;
+    line-height: 1.5;
+}
+
+.season-notice-text a {
+    color: #4682B4;
+}
+
+/* Surveillance-only mode: hide everything that needs a forecast reference date. */
+body.surveillance-only .season-notice {
+    display: block;
+}
+
+/* Evaluations page only: nothing to score before the first forecast. */
+body.surveillance-only .eval-top-card,
+body.surveillance-only #eval-fh-section {
+    display: none;
+}
+
+/* Dashboard, season with no forecasts yet. The layout is unchanged — same
+   tabs, same two cards — so only the controls that would be empty are
+   hidden, and the summary panel explains why it has nothing to show. */
+body.no-forecast .most-recent-btn,
+body.no-forecast .ref-date-group,
+body.no-forecast .panel-week-row,
+body.no-forecast .gauges-stack {
+    display: none;
+}
+
+.panel-empty {
+    font-family: var(--font);
+    font-size: 13px;
+    line-height: 1.6;
+    color: #666;
+}
+
+.panel-empty h3 {
+    font-size: 15px;
+    font-weight: 600;
+    color: #1a1a1a;
+    margin-bottom: 8px;
+}
+
+.panel-empty p {
+    margin-bottom: 10px;
+}
+
+.panel-empty a {
+    color: #4682B4;
+}
+
+.panel-empty .panel-empty-data {
+    margin-top: 14px;
+    padding-top: 12px;
+    border-top: 1px solid #eee;
+    font-size: 12px;
+    color: #888;
+}
+
+/* Controls that need a forecast: visible but inert until one exists. */
+.is-disabled {
+    opacity: 0.4;
+    pointer-events: none;
+}
+
+/* --- Tab Bar --- */
+.tab-bar {
+    display: flex;
+    gap: 0;
+    align-items: center;
+    border-bottom: 2px solid #e0e0e0;
+    margin-bottom: 10px;
+}
+
+.tab-bar-actions {
+    display: flex;
+    gap: 8px;
+    margin-left: auto;
+    margin-bottom: 6px;
+}
+
+.tab-action {
+    font-family: var(--font);
+    font-size: 12px;
+    font-weight: 500;
+    padding: 5px 12px;
+    border: 1px solid #ccc;
+    border-radius: 4px;
+    background: #fff;
+    color: #555;
+    cursor: pointer;
+    transition: all 0.12s ease;
+    white-space: nowrap;
+}
+
+.tab-action:hover {
+    background: #f5f5f5;
+    border-color: #999;
+    color: #1a1a1a;
+}
+
+.tab {
+    background: none;
+    border: none;
+    padding: 8px 24px;
+    font-family: var(--font);
+    font-size: 14px;
+    font-weight: 600;
+    color: #999;
+    cursor: pointer;
+    border-bottom: 3px solid transparent;
+    margin-bottom: -2px;
+    transition: color 0.15s ease, border-color 0.15s ease;
+}
+
+.tab:hover {
+    color: #666;
+}
+
+.tab.active {
+    color: #1a1a1a;
+    border-bottom-color: #1a1a1a;
+}
+
+/* --- Cards --- */
+.card {
+    background: #fff;
+    border: 1px solid #e0e0e0;
+    border-radius: 8px;
+    padding: 16px;
+    box-shadow: 0 1px 4px rgba(0, 0, 0, 0.06);
+    position: relative;
+}
+
+/* --- Cards Row (map + gauges) --- */
+.cards-row {
+    display: flex;
+    gap: 12px;
+    align-items: stretch;
+    margin-bottom: 16px;
+}
+
+.card-map,
+.card-overview {
+    flex: 1;
+    min-width: 0;
+    display: flex;
+    flex-direction: column;
+}
+
+/* Chart area to the right of the controls column in the overview card. */
+.overview-chart-area {
+    flex: 1;
+    min-width: 0;
+    display: flex;
+    flex-direction: column;
+    gap: 6px;
+}
+
+.map-hidden {
+    display: none !important;
+}
+
+.traj-info-btn {
+    margin-left: auto;
+    align-self: flex-end;
+}
+
+.card-gauges {
+    width: 380px;
+    flex-shrink: 0;
+    display: flex;
+    flex-direction: column;
+    padding: 20px;
+}
+
+/* --- Legend (left panel, below trend summary text) --- */
+.legend-container {
+    margin-top: 6px;
+}
+
+.legend-container svg {
+    display: block;
+}
+
+/* --- Map Layout: controls on the left, map on the right --- */
+.map-with-controls {
+    display: flex;
+    gap: 12px;
+    align-items: flex-start;
+}
+
+.map-left-controls {
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+    flex-shrink: 0;
+    width: 130px;
+}
+
+.map-container {
+    flex: 1;
+    min-width: 0;
+    position: relative;
+}
+
+#us-map,
+#boston-map {
+    width: 100%;
+    display: block;
+}
+
+.state,
+.region {
+    stroke: #fff;
+    stroke-width: 0.8;
+    cursor: pointer;
+    transition: stroke-width 0.1s ease;
+}
+
+.state:hover,
+.region:hover {
+    stroke: #333;
+    stroke-width: 1.8;
+}
+
+.region-label {
+    font-family: var(--font);
+    font-size: 18px;
+    font-weight: 600;
+    fill: #fff;
+    paint-order: stroke;
+    stroke: rgba(0, 0, 0, 0.45);
+    stroke-width: 3px;
+    stroke-linejoin: round;
+    pointer-events: none;
+    text-shadow: 0 1px 2px rgba(0, 0, 0, 0.3);
+}
+
+.state-border {
+    fill: none;
+    stroke: #fff;
+    stroke-width: 0.8;
+    pointer-events: none;
+}
+
+.state.no-data,
+.region.no-data {
+    fill: #f9f9f9 !important;
+    stroke: #ccc;
+    stroke-dasharray: 2, 2;
+}
+
+/* "Previous forecast" dropdown — sits under the activity legend on the left.
+   Compact styling because it's beside controls in a narrow rail. */
+.ref-date-group {
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+    margin-top: 12px;
+}
+.ref-date-label {
+    font-family: var(--font);
+    font-size: 11px;
+    font-weight: 600;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+    color: #888;
+}
+.ref-date-select {
+    font-family: var(--font);
+    font-size: 12px;
+    padding: 4px 6px;
+    border: 1px solid #ccc;
+    border-radius: 4px;
+    background: #fff;
+    width: 100%;
+    cursor: pointer;
+}
+.ref-date-select:focus {
+    outline: none;
+    border-color: #4682B4;
+    box-shadow: 0 0 0 2px rgba(70, 130, 180, 0.2);
+}
+
+/* --- Control Group with Title --- */
+.control-group {
+    display: flex;
+    flex-direction: column;
+}
+
+.control-title {
+    font-family: var(--font);
+    font-size: 11px;
+    font-weight: 600;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+    color: #999;
+    margin-bottom: 4px;
+    padding-left: 2px;
+}
+
+/* --- Segmented Controls (vertical button groups) --- */
+.seg-group {
+    display: flex;
+    flex-direction: column;
+    border-radius: 6px;
+    overflow: hidden;
+}
+
+.seg-btn {
+    font-family: var(--font);
+    cursor: pointer;
+    transition: all 0.12s ease;
+    white-space: nowrap;
+    border: none;
+    outline: none;
+    text-align: left;
+    display: block;
+    width: 100%;
+}
+
+/* --- Horizon Control (dark/primary style) --- */
+.horizon-control {
+    border: 1.5px solid #1a1a1a;
+    border-radius: 6px;
+}
+
+.horizon-control .seg-btn {
+    padding: 7px 12px;
+    font-size: 11px;
+    font-weight: 600;
+    background: #fff;
+    color: #1a1a1a;
+    border-bottom: 1px solid #e0e0e0;
+}
+
+.horizon-control .seg-btn:last-child {
+    border-bottom: none;
+}
+
+.horizon-control .seg-btn:hover {
+    background: #f5f5f5;
+}
+
+.horizon-control .seg-btn.active {
+    background: #1a1a1a;
+    color: #fff;
+}
+
+.horizon-control .seg-btn .date-range {
+    display: block;
+    font-size: 11px;
+    font-weight: 600;
+}
+
+.horizon-control .seg-btn .date-label {
+    display: block;
+    font-size: 11px;
+    font-weight: 400;
+    opacity: 0.5;
+    margin-top: 1px;
+}
+
+/* --- Horizontal horizon control (bottom of map) --- */
+.map-bottom-controls {
+    margin-top: auto;
+    padding-top: 8px;
+}
+
+/* Bottom row of the overview card: Forecast Week buttons + Previous forecast. */
+.overview-bottom {
+    display: flex;
+    align-items: flex-end;
+    gap: 16px;
+    padding-top: 12px;
+    margin-top: 10px;
+    border-top: 1px solid #eee;
+}
+
+.overview-bottom-main {
+    flex: 1;
+    min-width: 0;
+}
+
+.overview-bottom .ref-date-group {
+    margin-top: 0;
+    width: 190px;
+    flex-shrink: 0;
+}
+
+.overview-bottom .ref-date-select {
+    padding: 6px 6px;
+}
+
+/* Forecast dropdown inside the chart controls row. */
+.traj-controls .ref-date-group {
+    margin-top: 0;
+    width: 168px;
+}
+
+.traj-controls .traj-label-options {
+    flex-basis: auto;
+}
+
+.traj-controls .ref-date-select {
+    padding: 4px 6px;
+}
+
+/* Season pills row under the chart (only while "Previous seasons" is on). */
+#ctx-seasons-body.open {
+    justify-content: center;
+    flex-wrap: wrap;
+    gap: 6px;
+    padding-top: 6px;
+}
+
+.overview-bottom .rate-toggle {
+    align-self: flex-end;
+}
+
+/* The summary panel's About button sits at the bottom so it never overlaps the title. */
+.card-gauges .info-btn {
+    top: auto;
+    bottom: 14px;
+}
+
+.map-bottom-controls .control-title {
+    margin-bottom: 4px;
+}
+
+.horizon-control.horizontal {
+    flex-direction: row;
+    border-radius: 6px;
+}
+
+.horizon-control.horizontal .seg-btn {
+    border-bottom: none;
+    border-right: 1px solid #e0e0e0;
+    text-align: center;
+    flex: 1;
+}
+
+.horizon-control.horizontal .seg-btn:last-child {
+    border-right: none;
+}
+
+/* --- Estimate Control (light/secondary style) --- */
+.estimate-control {
+    border: 1px solid #ccc;
+    border-radius: 5px;
+}
+
+.estimate-control .seg-btn {
+    padding: 6px 12px;
+    font-size: 11px;
+    font-weight: 500;
+    background: #fff;
+    color: #666;
+    border-bottom: 1px solid #e8e8e8;
+    line-height: 1.3;
+}
+
+.estimate-desc {
+    display: block;
+    font-size: 11px;
+    font-weight: 400;
+    color: #aaa;
+    margin-top: 1px;
+}
+
+.estimate-control .seg-btn:last-child {
+    border-bottom: none;
+}
+
+.estimate-control .seg-btn:hover {
+    background: #fafafa;
+    color: #333;
+}
+
+.estimate-control .seg-btn.active {
+    background: #f0f0f0;
+    color: #1a1a1a;
+    font-weight: 600;
+}
+
+/* --- Rate Toggle (Total / Per 100k) --- */
+.rate-toggle {
+    display: flex;
+    border: 1px solid #ccc;
+    border-radius: 5px;
+    overflow: hidden;
+}
+
+.rate-btn {
+    font-family: var(--font);
+    font-size: 11px;
+    font-weight: 500;
+    padding: 5px 10px;
+    border: none;
+    background: #fff;
+    color: #666;
+    cursor: pointer;
+    transition: all 0.12s ease;
+}
+
+.rate-btn:first-child {
+    border-right: 1px solid #e8e8e8;
+}
+
+.rate-btn:hover {
+    background: #fafafa;
+    color: #333;
+}
+
+.rate-btn.active {
+    background: #f0f0f0;
+    color: #1a1a1a;
+    font-weight: 600;
+}
+
+/* --- Gauges Card --- */
+.gauges-overview {
+    font-family: var(--font);
+    color: #555;
+    line-height: 1.5;
+    margin-bottom: 14px;
+    padding-bottom: 12px;
+    border-bottom: 1px solid #eee;
+}
+
+.forecast-context-title {
+    font-family: var(--font);
+    font-size: 13px;
+    font-weight: 700;
+    color: #1a1a1a;
+    margin: 0 0 2px;
+    line-height: 1.3;
+}
+
+.forecast-context-title .forecast-week-range {
+    display: block;
+    font-size: 11px;
+    font-weight: 500;
+    color: #888;
+    margin-top: 1px;
+}
+
+.overview-primary {
+    font-size: 12px;
+    margin-bottom: 0;
+    color: #333;
+}
+
+.overview-primary strong {
+    color: #1a1a1a;
+}
+
+.overview-line {
+    display: block;
+    line-height: 1.6;
+}
+
+.overview-pct {
+    font-size: 11px;
+    color: #999;
+    font-weight: 400;
+}
+
+.map-trend-summary {
+    font-family: var(--font);
+    font-size: 11px;
+    color: #555;
+    text-align: left;
+    padding: 6px 0 0;
+    line-height: 1.4;
+}
+
+.map-trend-summary strong {
+    color: #1a1a1a;
+    font-weight: 700;
+}
+
+.gauges-stack {
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+    align-items: stretch;
+}
+
+/* --- Bar Chart & Admissions Distribution --- */
+.bar-chart-container {
+    margin-top: 4px;
+}
+
+.bar-chart-container svg,
+.admissions-dist-container svg {
+    display: block;
+}
+
+.admissions-dist-container {
+    margin-top: 4px;
+}
+
+.gauge-wrapper {
+    text-align: center;
+}
+
+.gauge-title {
+    font-family: var(--font);
+    font-size: 13px;
+    font-weight: 600;
+    color: #333;
+    margin-bottom: 2px;
+    text-align: left;
+}
+
+.gauge-wrapper svg {
+    display: block;
+    margin: 0 auto;
+}
+
+.gauge-description {
+    font-family: var(--font);
+    font-size: 11px;
+    color: #666;
+    margin-top: 2px;
+    line-height: 1.3;
+}
+
+
+/* --- Info Buttons --- */
+/* "About this chart" buttons: visible text pills instead of a tiny "i". */
+.info-btn {
+    position: absolute;
+    top: 10px;
+    right: 12px;
+    padding: 4px 11px;
+    border-radius: 14px;
+    border: 1px solid #c8c8c8;
+    background: #fff;
+    color: #555;
+    font-family: var(--font);
+    font-size: 12px;
+    font-weight: 500;
+    white-space: nowrap;
+    cursor: pointer;
+    display: inline-flex;
+    align-items: center;
+    gap: 4px;
+    transition: all 0.12s ease;
+    line-height: 1.2;
+    z-index: 5;
+}
+
+.info-btn:hover {
+    border-color: #1a1a1a;
+    color: #1a1a1a;
+    background: #f5f5f5;
+}
+
+/* Round "?" help button (opens the same info modal as the About buttons). */
+.help-btn {
+    width: 24px;
+    height: 24px;
+    border-radius: 50%;
+    border: 1.5px solid #bbb;
+    background: #fff;
+    color: #666;
+    font-family: var(--font);
+    font-size: 13px;
+    font-weight: 700;
+    line-height: 1;
+    cursor: pointer;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    padding: 0;
+    flex-shrink: 0;
+    transition: all 0.12s ease;
+}
+
+.help-btn:hover {
+    border-color: #1a1a1a;
+    color: #1a1a1a;
+    background: #f5f5f5;
+}
+
+.traj-info-btn.help-btn {
+    margin-left: auto;
+    align-self: flex-end;
+}
+
+.panel-help-btn {
+    position: absolute;
+    right: 14px;
+    bottom: 14px;
+}
+
+/* Checkbox labels in the chart controls. */
+.traj-check {
+    display: inline-flex;
+    align-items: center;
+    gap: 5px;
+    cursor: pointer;
+    font-weight: 500;
+    color: #666;
+}
+
+.traj-check input {
+    margin: 0;
+    accent-color: #4682B4;
+}
+
+/* Forecast-week selector at the top of the summary panel. */
+.panel-week-row {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    margin-bottom: 12px;
+    padding-bottom: 12px;
+    border-bottom: 1px solid #eee;
+}
+
+.panel-week-row .control-title {
+    margin: 0;
+    white-space: nowrap;
+}
+
+.panel-week-buttons {
+    flex: 1;
+}
+
+.panel-week-buttons .seg-btn {
+    padding: 5px 2px;
+    text-align: center;
+}
+
+/* Compact: the label is "Wk n"; the date range is in the button's tooltip
+   and in the narrative line below. */
+.horizon-control.panel-week-buttons .seg-btn .date-range {
+    display: none;
+}
+
+.horizon-control.panel-week-buttons .seg-btn .date-label {
+    font-size: 12px;
+    font-weight: 600;
+}
+
+.tab-action-link {
+    text-decoration: none;
+    display: inline-flex;
+    align-items: center;
+}
+
+/* Variant placed in a section header row rather than a card corner. */
+.info-btn-inline {
+    position: static;
+    flex-shrink: 0;
+    margin-top: 4px;
+}
+
+.section-header-row {
+    display: flex;
+    justify-content: space-between;
+    align-items: flex-start;
+    gap: 16px;
+}
+
+.traj-caption {
+    font-family: var(--font);
+    font-size: 11px;
+    line-height: 1.5;
+    color: #888;
+    text-align: center;
+    margin: 4px auto 0;
+}
+
+.info-modal-footer {
+    margin-top: 16px;
+    padding-top: 12px;
+    border-top: 1px solid #e5e5e5;
+    font-family: var(--font);
+    font-size: 13px;
+}
+
+.info-modal-footer a {
+    color: #4682B4;
+}
+
+/* --- Info Modal (click-to-open panel) --- */
+.info-modal-backdrop {
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100vw;
+    height: 100vh;
+    background: rgba(0, 0, 0, 0.35);
+    z-index: 11000;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    animation: infoFadeIn 0.15s ease;
+}
+
+@keyframes infoFadeIn {
+    from { opacity: 0; }
+    to { opacity: 1; }
+}
+
+.info-modal {
+    background: #fff;
+    border-radius: 10px;
+    box-shadow: 0 8px 32px rgba(0, 0, 0, 0.18);
+    max-width: 600px;
+    width: 90vw;
+    max-height: 80vh;
+    display: flex;
+    flex-direction: column;
+    position: relative;
+    animation: infoSlideIn 0.2s ease;
+}
+
+@keyframes infoSlideIn {
+    from { opacity: 0; transform: translateY(8px); }
+    to { opacity: 1; transform: translateY(0); }
+}
+
+.info-modal-close {
+    position: absolute;
+    top: 10px;
+    right: 12px;
+    background: none;
+    border: none;
+    font-size: 20px;
+    color: #aaa;
+    cursor: pointer;
+    line-height: 1;
+    padding: 2px 6px;
+    border-radius: 4px;
+    transition: color 0.1s ease, background 0.1s ease;
+    z-index: 1;
+}
+
+.info-modal-close:hover {
+    color: #333;
+    background: #f0f0f0;
+}
+
+.info-modal-body {
+    font-family: var(--font);
+    font-size: 13px;
+    color: #555;
+    line-height: 1.6;
+    padding: 24px 28px;
+    overflow-y: auto;
+    flex: 1 1 auto;
+    min-height: 0;
+}
+
+.info-modal-body strong {
+    color: #333;
+}
+
+.info-modal-body em {
+    font-style: italic;
+}
+
+.info-divider {
+    border: none;
+    border-top: 1px solid #e0e0e0;
+    margin: 16px 0;
+}
+
+.info-section-title {
+    display: block;
+    font-size: 14px;
+    font-weight: 700;
+    color: #1a1a1a;
+    margin-bottom: 6px;
+}
+
+.info-subsection-title {
+    display: block;
+    font-size: 13px;
+    font-weight: 600;
+    color: #333;
+    margin-bottom: 4px;
+}
+
+/* --- Tooltip --- */
+.tooltip {
+    position: fixed;
+    pointer-events: none;
+    background: #fff;
+    border: 1px solid #ddd;
+    border-radius: 6px;
+    padding: 12px 14px;
+    box-shadow: 0 2px 12px rgba(0, 0, 0, 0.12);
+    font-family: var(--font);
+    font-size: 12px;
+    z-index: 1000;
+    opacity: 0;
+    transition: opacity 0.15s ease;
+    max-width: 340px;
+}
+
+.tooltip.visible {
+    opacity: 1;
+}
+
+.tooltip-header {
+    font-size: 14px;
+    font-weight: 700;
+    color: #1a1a1a;
+    margin-bottom: 8px;
+    border-bottom: 1px solid #eee;
+    padding-bottom: 6px;
+}
+
+.tooltip-chart {
+    margin-top: 4px;
+}
+
+.tooltip-chart svg {
+    overflow: visible;
+}
+
+.tooltip-bar-label {
+    font-size: 11px;
+    fill: #666;
+}
+
+.tooltip-bar-value {
+    font-size: 11px;
+    fill: #333;
+    font-weight: 600;
+}
+
+/* --- DC Inset --- */
+.dc-inset-label {
+    font-family: var(--font);
+    font-size: 11px;
+    fill: #666;
+    font-weight: 600;
+}
+
+/* --- Trajectory Section --- */
+.card-trajectories {
+    margin-top: 4px;
+}
+
+.traj-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    flex-wrap: wrap;
+    gap: 8px;
+    margin-bottom: 8px;
+}
+
+.traj-body {
+    display: flex;
+    gap: 0;
+    align-items: stretch;
+}
+
+.section-divider {
+    border: none;
+    border-top: 1px solid #e0e0e0;
+    margin: 24px 0 16px;
+}
+
+.section-title {
+    font-size: 18px;
+    font-weight: 700;
+    color: #1a1a1a;
+}
+
+.section-subtitle {
+    font-family: var(--font);
+    font-size: 13px;
+    color: #888;
+    margin-top: 2px;
+    margin-bottom: 12px;
+}
+
+.traj-controls {
+    display: flex;
+    gap: 14px;
+    align-items: flex-end;
+    flex-wrap: wrap;
+}
+
+.traj-label {
+    font-family: var(--font);
+    font-size: 13px;
+    font-weight: 500;
+    color: #666;
+    display: flex;
+    flex-direction: column;
+    gap: 3px;
+}
+
+.traj-label-location {
+    font-size: 14px;
+}
+
+.traj-select {
+    font-family: var(--font);
+    font-size: 14px;
+    padding: 5px 10px;
+    border: 1px solid #ddd;
+    border-radius: 4px;
+    background: #fff;
+    color: #333;
+}
+
+.traj-select-location {
+    font-size: 15px;
+    padding: 6px 12px;
+}
+
+/* --- Trajectory Slider --- */
+
+/* --- Context Panel (right side of trajectory chart) --- */
+/* "Add context" row below the chart: pill toggles; each toggle's options
+   (season pills, horizon pills) appear inline to its right when it is on. */
+.traj-context-panel {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: 8px 12px;
+    padding-top: 6px;
+    font-family: var(--font);
+}
+
+.context-panel-title {
+    font-size: 11px;
+    font-weight: 600;
+    color: #888;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+    margin-right: 2px;
+}
+
+.context-section {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+}
+
+.context-section-header {
+    display: inline-flex;
+    align-items: center;
+    padding: 3px 10px;
+    border: 1px solid #ddd;
+    border-radius: 4px;
+    background: #fff;
+    cursor: pointer;
+    font-family: var(--font);
+    font-size: 12px;
+    color: #666;
+    transition: all 0.12s ease;
+}
+
+.context-section-header:hover {
+    border-color: #999;
+    color: #1a1a1a;
+}
+
+.context-section-header.active {
+    background: #f0f6fa;
+    border-color: #6faed0;
+    color: #1a1a1a;
+    font-weight: 600;
+}
+
+.context-chevron {
+    display: none;
+}
+
+.context-section-body {
+    display: none;
+}
+
+.context-section-body.open {
+    display: flex;
+    align-items: center;
+    gap: 4px;
+}
+
+.context-section-body:empty {
+    display: none;
+}
+
+/* Season toggle buttons */
+.ctx-season-btn {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    padding: 3px 8px;
+    border: 1px solid #e3e3e3;
+    border-radius: 4px;
+    background: #fff;
+    cursor: pointer;
+    font-family: var(--font);
+    font-size: 11px;
+    color: #666;
+    margin: 0;
+    transition: all 0.12s ease;
+}
+
+.ctx-season-btn:hover {
+    border-color: #ccc;
+}
+
+.ctx-season-btn.active {
+    background: #f5f5f5;
+    border-color: #bbb;
+    color: #1a1a1a;
+    font-weight: 600;
+}
+
+.ctx-season-swatch {
+    width: 16px;
+    height: 3px;
+    border-radius: 1px;
+    flex-shrink: 0;
+}
+
+/* Activity level items in context panel */
+.ctx-activity-item {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    padding: 4px 0;
+    font-family: var(--font);
+    font-size: 12px;
+    color: #555;
+}
+
+.ctx-activity-swatch {
+    width: 16px;
+    height: 12px;
+    border-radius: 2px;
+    flex-shrink: 0;
+    opacity: 0.5;
+}
+
+/* Horizon buttons in trends section */
+.ctx-horizon-group {
+    display: flex;
+    gap: 4px;
+    margin: 0;
+    flex-wrap: wrap;
+}
+
+.ctx-horizon-btn {
+    font-family: var(--font);
+    font-size: 11px;
+    font-weight: 600;
+    padding: 4px 10px;
+    border: 1px solid #ddd;
+    border-radius: 4px;
+    background: #fff;
+    color: #666;
+    cursor: pointer;
+    transition: all 0.12s ease;
+}
+
+.ctx-horizon-btn:hover {
+    border-color: #999;
+}
+
+.ctx-horizon-btn.active {
+    background: #1a1a1a;
+    color: #fff;
+    border-color: #1a1a1a;
+}
+
+/* PI toggle buttons (top bar) */
+.traj-pi-controls {
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+}
+
+.traj-pi-buttons {
+    display: flex;
+    gap: 6px;
+    margin-top: 4px;
+}
+
+.traj-pi-btn {
+    display: flex;
+    align-items: center;
+    gap: 5px;
+    padding: 3px 10px;
+    border: 1px solid #ddd;
+    border-radius: 4px;
+    background: #fff;
+    cursor: pointer;
+    font-family: var(--font);
+    font-size: 12px;
+    color: #666;
+    transition: all 0.12s ease;
+}
+
+.traj-pi-btn:hover {
+    border-color: #aaa;
+}
+
+.traj-pi-btn.active {
+    background: #f0f6fa;
+    border-color: #6faed0;
+    color: #1a1a1a;
+    font-weight: 600;
+}
+
+.traj-pi-swatch {
+    width: 14px;
+    height: 10px;
+    border-radius: 2px;
+    flex-shrink: 0;
+}
+
+/* --- Trajectory Legend --- */
+.traj-legend {
+    display: flex;
+    justify-content: center;
+    flex-wrap: wrap;
+    gap: 4px 16px;
+    padding: 4px 0 0;
+    font-family: var(--font);
+    font-size: 13px;
+    color: #666;
+}
+
+.traj-legend-item {
+    display: flex;
+    align-items: center;
+    gap: 5px;
+}
+
+.traj-legend-swatch {
+    width: 18px;
+    height: 3px;
+    border-radius: 1px;
+}
+
+.traj-chart-container {
+    position: relative;
+    flex: 1;
+    min-width: 0;
+}
+
+#traj-chart {
+    width: 100%;
+    display: block;
+}
+
+/* Trajectory tooltip rows */
+.traj-tip-note {
+    font-size: 11px;
+    line-height: 1.4;
+    color: #777;
+    margin: 3px 0 1px 14px;
+}
+
+.traj-tip-header {
+    font-weight: 700;
+    margin-bottom: 4px;
+    padding-bottom: 4px;
+    border-bottom: 1px solid #eee;
+    color: #1a1a1a;
+}
+
+.traj-tip-row {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    padding: 2px 0;
+}
+
+.traj-tip-swatch {
+    width: 12px;
+    height: 3px;
+    border-radius: 1px;
+    flex-shrink: 0;
+}
+
+/* Trajectory chart tooltip */
+.traj-tip {
+    position: fixed;
+    pointer-events: none;
+    background: #fff;
+    border: 1px solid #ddd;
+    border-radius: 5px;
+    padding: 8px 10px;
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+    font-family: var(--font);
+    font-size: 12px;
+    color: #333;
+    z-index: 1000;
+    opacity: 0;
+    transition: opacity 0.12s ease;
+    max-width: 240px;
+    line-height: 1.4;
+}
+
+.traj-tip.visible {
+    opacity: 1;
+}
+
+/* --- Funding Footer --- */
+.funding-footer {
+    font-family: var(--font);
+    font-size: 11px;
+    color: #aaa;
+    text-align: center;
+    padding: 20px 0 10px;
+    border-top: 1px solid #eee;
+    margin-top: 24px;
+}
+
+/* =============================================
+   Guided Tour
+   ============================================= */
+
+.tour-overlay {
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100vw;
+    height: 100vh;
+    background: rgba(0, 0, 0, 0.45);
+    z-index: 10000;
+    transition: clip-path 0.3s ease;
+}
+
+.tour-spotlight {
+    position: relative;
+    z-index: 10001;
+}
+
+.tour-popup {
+    position: fixed;
+    z-index: 10002;
+    background: #fff;
+    border-radius: 10px;
+    padding: 0;
+    box-shadow: 0 6px 24px rgba(0, 0, 0, 0.18);
+    max-width: 340px;
+    width: 340px;
+    font-family: var(--font);
+    animation: tourFadeIn 0.25s ease;
+    display: flex;
+    flex-direction: column;
+    max-height: calc(100vh - 32px);
+}
+
+.tour-popup-body {
+    overflow-y: auto;
+    padding: 22px 24px 0;
+    flex: 1 1 auto;
+    min-height: 0;
+}
+
+.tour-popup .tour-nav {
+    flex-shrink: 0;
+    margin: 0 24px;
+    padding: 12px 0 16px;
+    border-top: 1px solid #eee;
+}
+
+@keyframes tourFadeIn {
+    from { opacity: 0; transform: translateY(6px); }
+    to { opacity: 1; transform: translateY(0); }
+}
+
+.tour-close {
+    position: absolute;
+    top: 10px;
+    right: 12px;
+    background: none;
+    border: none;
+    font-size: 20px;
+    color: #aaa;
+    cursor: pointer;
+    line-height: 1;
+    padding: 2px 6px;
+    border-radius: 4px;
+    transition: color 0.1s ease, background 0.1s ease;
+}
+
+.tour-close:hover {
+    color: #333;
+    background: #f0f0f0;
+}
+
+.tour-step-title {
+    font-size: 16px;
+    font-weight: 700;
+    color: #1a1a1a;
+    margin-bottom: 8px;
+    padding-right: 24px;
+}
+
+.tour-step-text {
+    font-size: 13px;
+    color: #555;
+    line-height: 1.55;
+    margin-bottom: 16px;
+}
+
+.tour-nav {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+}
+
+.tour-counter {
+    font-size: 12px;
+    color: #999;
+    font-weight: 500;
+}
+
+.tour-arrows {
+    display: flex;
+    gap: 6px;
+}
+
+.tour-arrow {
+    width: 34px;
+    height: 34px;
+    border-radius: 50%;
+    border: 1.5px solid #ddd;
+    background: #fff;
+    font-size: 16px;
+    color: #333;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    transition: all 0.12s ease;
+    padding: 0;
+    line-height: 1;
+}
+
+.tour-arrow:hover:not(:disabled) {
+    background: #1a1a1a;
+    color: #fff;
+    border-color: #1a1a1a;
+}
+
+.tour-arrow:disabled {
+    opacity: 0.3;
+    cursor: default;
+}
+
+.tour-next {
+    font-size: 13px;
+    width: auto;
+    min-width: 34px;
+    padding: 0 12px;
+    border-radius: 17px;
+    font-weight: 600;
+}
+
+.tour-popup-wide {
+    max-width: 420px;
+    width: 420px;
+}
+
+/* Tour dropdown (expandable sections) */
+.tour-dropdown {
+    margin: 10px 0 14px;
+}
+
+.tour-dropdown-toggle {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    background: none;
+    border: 1px solid #ddd;
+    border-radius: 6px;
+    padding: 7px 12px;
+    font-size: 12px;
+    font-weight: 600;
+    color: #444;
+    cursor: pointer;
+    width: 100%;
+    text-align: left;
+    transition: background 0.12s ease, border-color 0.12s ease;
+}
+
+.tour-dropdown-toggle:hover {
+    background: #f7f7f7;
+    border-color: #bbb;
+}
+
+.tour-dropdown-chevron {
+    margin-left: auto;
+    font-size: 11px;
+    color: #888;
+}
+
+.tour-dropdown-body {
+    margin-top: 6px;
+    border-left: 2px solid #e0e0e0;
+    padding-left: 12px;
+}
+
+.tour-dropdown-item {
+    margin-bottom: 4px;
+}
+
+.tour-dropdown-item-header {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    background: none;
+    border: none;
+    padding: 5px 0;
+    font-size: 12px;
+    color: #333;
+    cursor: pointer;
+    width: 100%;
+    text-align: left;
+}
+
+.tour-dropdown-item-header:hover {
+    color: #000;
+}
+
+.tour-dropdown-item-body {
+    font-size: 12px;
+    color: #555;
+    line-height: 1.55;
+    padding: 4px 0 10px;
+}
+
+.tour-dropdown-item-body em {
+    font-style: italic;
+}
+
+.tour-step-text br {
+    display: block;
+    content: "";
+    margin-top: 6px;
+}
+
+.tour-threshold-table {
+    width: 100%;
+    border-collapse: collapse;
+    font-size: 11px;
+    margin: 4px 0 6px;
+}
+
+.tour-threshold-table th,
+.tour-threshold-table td {
+    border: 1px solid #ddd;
+    padding: 4px 6px;
+    text-align: center;
+}
+
+.tour-threshold-table th {
+    background: #f5f5f5;
+    font-weight: 600;
+    color: #333;
+}
+
+.tour-threshold-table td:first-child {
+    text-align: left;
+    font-weight: 500;
+    white-space: nowrap;
+}
+
+/* =============================================
+   Evaluations Page
+   ============================================= */
+
+.eval-title-row {
+    display: flex;
+    align-items: baseline;
+    gap: 12px;
+}
+
+.eval-info-btn {
+    font-family: var(--font);
+    font-size: 12px;
+    font-weight: 500;
+    padding: 4px 12px;
+    border: 1px solid #ccc;
+    border-radius: 4px;
+    background: #fff;
+    color: #555;
+    cursor: pointer;
+    transition: all 0.15s ease;
+    white-space: nowrap;
+}
+
+.eval-info-btn:hover {
+    background: #f0f0f0;
+    color: #1a1a1a;
+    border-color: #999;
+}
+
+/* --- Energy Score modal --- */
+
+.eval-modal-overlay {
+    display: none;
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    background: rgba(0, 0, 0, 0.4);
+    z-index: 1000;
+    justify-content: center;
+    align-items: center;
+}
+
+.eval-modal-overlay.active {
+    display: flex;
+}
+
+.eval-modal {
+    background: #fff;
+    border-radius: 8px;
+    padding: 32px 36px;
+    max-width: 600px;
+    width: 90%;
+    max-height: 80vh;
+    overflow-y: auto;
+    position: relative;
+    box-shadow: 0 8px 32px rgba(0, 0, 0, 0.15);
+    font-family: var(--font);
+    font-size: 14px;
+    color: #333;
+    line-height: 1.6;
+}
+
+.eval-modal h3 {
+    font-size: 20px;
+    font-weight: 700;
+    color: #1a1a1a;
+    margin-bottom: 12px;
+}
+
+.eval-modal p {
+    margin-bottom: 12px;
+}
+
+.eval-modal ul {
+    margin: 0 0 12px 20px;
+}
+
+.eval-modal li {
+    margin-bottom: 6px;
+}
+
+.eval-modal-close {
+    position: absolute;
+    top: 12px;
+    right: 16px;
+    background: none;
+    border: none;
+    font-size: 24px;
+    color: #999;
+    cursor: pointer;
+    line-height: 1;
+    padding: 4px;
+}
+
+.eval-modal-close:hover {
+    color: #333;
+}
+
+.eval-modal-formula {
+    background: #f8f8f8;
+    border: 1px solid #e8e8e8;
+    border-radius: 4px;
+    padding: 16px 20px;
+    margin: 16px 0;
+    font-size: 16px;
+    text-align: center;
+    font-family: var(--font);
+    font-style: italic;
+    letter-spacing: 0.5px;
+}
+
+.eval-modal-formula .frac {
+    display: inline-block;
+    text-align: center;
+    vertical-align: middle;
+    margin: 0 2px;
+}
+
+.eval-modal-formula .frac sup,
+.eval-modal-formula .frac sub {
+    display: block;
+    font-size: 0.7em;
+    line-height: 1.1;
+}
+
+.eval-modal-formula .frac .frac-bar {
+    display: block;
+    height: 1px;
+    background: #333;
+    margin: 1px 0;
+}
+
+.eval-modal-cite {
+    font-size: 12px;
+    color: #888;
+    border-top: 1px solid #eee;
+    padding-top: 12px;
+    margin-top: 16px;
+}
+
+.eval-modal-cite a {
+    color: #3D5A80;
+}
+
+.eval-subtitle {
+    font-family: var(--font);
+    font-size: 14px;
+    color: #666;
+    margin-bottom: 16px;
+    line-height: 1.5;
+}
+
+/* --- Top section: map + controls/time series --- */
+
+.eval-top-card {
+    padding: 16px;
+}
+
+.eval-top-row {
+    display: flex;
+    gap: 16px;
+    align-items: flex-start;
+}
+
+.eval-right-panel {
+    width: 300px;
+    flex-shrink: 0;
+    display: flex;
+    flex-direction: column;
+    gap: 14px;
+}
+
+.eval-right-panel .control-group {
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+}
+
+.eval-norm-control,
+.eval-agg-control,
+.eval-horizon-control,
+.eval-model-control,
+.eval-log-toggle {
+    border: 1px solid #ccc;
+    border-radius: 5px;
+    display: flex;
+    flex-direction: row;
+}
+
+.eval-norm-control .seg-btn,
+.eval-agg-control .seg-btn,
+.eval-horizon-control .seg-btn,
+.eval-model-control .seg-btn,
+.eval-log-toggle .seg-btn {
+    padding: 5px 10px;
+    font-family: var(--font);
+    font-size: 12px;
+    font-weight: 500;
+    color: #555;
+    background: #fff;
+    border: none;
+    cursor: pointer;
+    transition: all 0.12s ease;
+    border-right: 1px solid #e8e8e8;
+    text-align: center;
+    flex: 1;
+}
+
+.eval-norm-control .seg-btn:last-child,
+.eval-agg-control .seg-btn:last-child,
+.eval-horizon-control .seg-btn:last-child,
+.eval-model-control .seg-btn:last-child,
+.eval-log-toggle .seg-btn:last-child {
+    border-right: none;
+}
+
+.eval-norm-control .seg-btn.active,
+.eval-agg-control .seg-btn.active,
+.eval-horizon-control .seg-btn.active,
+.eval-model-control .seg-btn.active,
+.eval-log-toggle .seg-btn.active {
+    background: #f0f0f0;
+    color: #1a1a1a;
+    font-weight: 600;
+}
+
+.eval-select {
+    font-family: var(--font);
+    font-size: 12px;
+    padding: 5px 8px;
+    border: 1px solid #ccc;
+    border-radius: 4px;
+    background: #fff;
+    color: #333;
+    width: 100%;
+    cursor: pointer;
+}
+
+.eval-map-summary {
+    font-family: var(--font);
+    font-size: 12px;
+    color: #666;
+    line-height: 1.5;
+    margin-top: 4px;
+}
+
+/* --- Map area --- */
+
+.eval-map-area {
+    flex: 1;
+    min-width: 0;
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+}
+
+.eval-map-with-legend {
+    display: flex;
+    align-items: center;
+    justify-content: flex-start;
+    gap: 10px;
+}
+
+.eval-map-container {
+    flex: 1 1 auto;
+    min-width: 0;
+}
+
+.eval-map-container svg {
+    width: 100%;
+    height: auto;
+    max-height: 460px;
+    display: block;
+}
+
+.eval-legend-container {
+    flex: 0 0 auto;
+    display: flex;
+    align-items: center;
+}
+
+.eval-metric-row {
+    display: flex;
+    gap: 10px;
+}
+
+.eval-metric-group {
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+    gap: 3px;
+}
+
+.eval-metric-label {
+    font-family: var(--font);
+    font-size: 11px;
+    font-weight: 600;
+    color: #888;
+    text-transform: uppercase;
+    letter-spacing: 0.3px;
+}
+
+.eval-metric-pair {
+    flex: 1;
+    border: 1px solid #ccc;
+    border-radius: 5px;
+    display: flex;
+}
+
+.eval-metric-pair .seg-btn {
+    padding: 5px 8px;
+    font-family: var(--font);
+    font-size: 12px;
+    font-weight: 500;
+    color: #555;
+    background: #fff;
+    border: none;
+    cursor: pointer;
+    transition: all 0.12s ease;
+    border-right: 1px solid #e8e8e8;
+    text-align: center;
+    flex: 1;
+}
+
+.eval-metric-pair .seg-btn:last-child {
+    border-right: none;
+}
+
+.eval-metric-pair .seg-btn.active {
+    background: #f0f0f0;
+    color: #1a1a1a;
+    font-weight: 600;
+}
+
+/* --- Hover time series chart --- */
+
+.eval-hover-chart {
+    width: 100%;
+    margin-top: 4px;
+}
+
+.eval-hover-chart svg {
+    width: 100%;
+    height: auto;
+}
+
+/* --- Trajectory section --- */
+
+.eval-traj-card {
+    padding: 16px;
+}
+
+.eval-traj-controls {
+    display: flex;
+    gap: 20px;
+    align-items: flex-end;
+    margin-bottom: 12px;
+    flex-wrap: wrap;
+}
+
+.traj-controls-row {
+    display: flex;
+    gap: 16px;
+    align-items: flex-end;
+}
+
+.eval-traj-controls .traj-label {
+    font-family: var(--font);
+    font-size: 11px;
+    font-weight: 600;
+    text-transform: uppercase;
+    letter-spacing: 0.4px;
+    color: #999;
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+}
+
+.eval-traj-controls .traj-select {
+    font-family: var(--font);
+    font-size: 14px;
+    padding: 5px 8px;
+    border: 1px solid #ccc;
+    border-radius: 4px;
+    background: #fff;
+    color: #333;
+}
+
+.eval-traj-controls .traj-select-location {
+    font-size: 15px;
+    min-width: 160px;
+}
+
+.traj-label-colorby {
+    flex-direction: row !important;
+    align-items: center;
+    gap: 8px !important;
+}
+
+.eval-color-control {
+    border: 1px solid #ccc;
+    border-radius: 5px;
+    display: flex;
+}
+
+.eval-color-control .seg-btn {
+    padding: 5px 12px;
+    font-family: var(--font);
+    font-size: 12px;
+    font-weight: 500;
+    color: #555;
+    background: #fff;
+    border: none;
+    cursor: pointer;
+    transition: all 0.12s ease;
+    border-right: 1px solid #ccc;
+}
+
+.eval-color-control .seg-btn:last-child {
+    border-right: none;
+}
+
+.eval-color-control .seg-btn.active {
+    background: #f0f0f0;
+    color: #1a1a1a;
+    font-weight: 600;
+}
+
+.eval-baseline-control {
+    border: 1px solid #ccc;
+    border-radius: 5px;
+    display: flex;
+}
+
+.eval-baseline-control .seg-btn {
+    padding: 5px 12px;
+    font-family: var(--font);
+    font-size: 12px;
+    font-weight: 500;
+    color: #555;
+    background: #fff;
+    border: none;
+    cursor: pointer;
+    transition: all 0.12s ease;
+    border-right: 1px solid #ccc;
+}
+
+.eval-baseline-control .seg-btn:last-child {
+    border-right: none;
+}
+
+.eval-baseline-control .seg-btn.active {
+    background: #f0f0f0;
+    color: #1a1a1a;
+    font-weight: 600;
+}
+
+.eval-traj-chart-container {
+    width: 100%;
+}
+
+.eval-traj-chart-container svg {
+    width: 100%;
+    height: auto;
+}
+
+.eval-traj-legend {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 8px;
+    align-items: center;
+    padding: 8px 0 0;
+    font-family: var(--font);
+    font-size: 12px;
+    color: #666;
+}
+
+/* --- Model Comparison section (box plot + coverage) --- */
+
+.eval-bottom-card {
+    padding: 16px;
+}
+
+.eval-bottom-row {
+    display: flex;
+    gap: 24px;
+    align-items: flex-start;
+}
+
+.eval-boxplot-area {
+    flex: 1.2;
+    min-width: 0;
+}
+
+.eval-coverage-area {
+    flex: 1;
+    min-width: 0;
+}
+
+.eval-boxplot-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 8px;
+}
+
+.eval-chart-title {
+    font-family: var(--font);
+    font-size: 14px;
+    font-weight: 600;
+    color: #1a1a1a;
+    display: block;
+    margin-bottom: 8px;
+}
+
+.eval-boxplot-header .eval-chart-title {
+    margin-bottom: 0;
+}
+
+.eval-log-toggle {
+    border: 1px solid #ccc;
+    border-radius: 5px;
+    display: flex;
+}
+
+.eval-log-toggle .seg-btn {
+    padding: 4px 10px;
+    font-family: var(--font);
+    font-size: 11px;
+    font-weight: 500;
+    color: #555;
+    background: #fff;
+    border: none;
+    cursor: pointer;
+    transition: all 0.12s ease;
+    border-right: 1px solid #ccc;
+}
+
+.eval-log-toggle .seg-btn:last-child {
+    border-right: none;
+}
+
+.eval-log-toggle .seg-btn.active {
+    background: #3d7cc9;
+    color: #fff;
+    font-weight: 600;
+}
+
+.eval-boxplot-area svg,
+.eval-coverage-area svg {
+    width: 100%;
+    height: auto;
+}
+
+@media (max-width: 900px) {
+    .eval-bottom-row {
+        flex-direction: column;
+    }
+}
+
+/* Forecasts-by-Horizon card (bottom of eval page). NYT-style inline horizon bar:
+   a thin rule above the chart, a small uppercase label, and a compact pill group. */
+.eval-bottom-card {
+    padding: 14px 16px;
+}
+.eval-fh-bar {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    padding: 0 0 10px;
+    border-bottom: 1px solid #e0e0e0;
+    margin-bottom: 10px;
+}
+.eval-fh-label {
+    font-family: var(--font);
+    font-size: 11px;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+    color: #999;
+}
+.eval-fh-control {
+    border: 1px solid #ccc;
+    border-radius: 5px;
+    display: flex;
+    flex-direction: row;
+    flex-wrap: nowrap;
+    overflow: hidden;
+    width: fit-content;
+}
+.eval-fh-control .eval-fh-btn {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: auto;
+    text-align: center;
+}
+.eval-fh-control .eval-fh-btn {
+    padding: 5px 12px;
+    font-family: var(--font);
+    font-size: 12px;
+    font-weight: 500;
+    color: #555;
+    background: #fff;
+    border: none;
+    border-right: 1px solid #ccc;
+    cursor: pointer;
+    transition: background 0.12s ease;
+}
+.eval-fh-control .eval-fh-btn:last-child { border-right: none; }
+.eval-fh-control .eval-fh-btn:hover { background: #f6f6f6; }
+.eval-fh-control .eval-fh-btn.active {
+    background: #1a1a1a;
+    color: #fff;
+    font-weight: 600;
+}
+
+/* "Show baseline" toggle next to the Wk selector */
+.eval-baseline-toggle {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    padding: 5px 10px;
+    border: 1px solid #ccc;
+    border-radius: 5px;
+    background: #fff;
+    cursor: pointer;
+    font-family: var(--font);
+    font-size: 12px;
+    color: #555;
+    transition: all 0.12s ease;
+}
+.eval-baseline-toggle:hover {
+    border-color: #C45B5B;
+    color: #1a1a1a;
+}
+.eval-baseline-toggle.active {
+    background: #fbeceb;
+    border-color: #C45B5B;
+    color: #7a3636;
+    font-weight: 600;
+}
+.eval-baseline-swatch {
+    display: inline-block;
+    width: 14px;
+    height: 8px;
+    border-radius: 2px;
+    background: #C45B5B;
+    opacity: 0.5;
+}
+.eval-baseline-toggle.active .eval-baseline-swatch {
+    opacity: 0.85;
+}
+.eval-horizon-chart-container {
+    width: 100%;
+    min-height: 340px;
+}
+.eval-horizon-chart-container svg {
+    width: 100%;
+    height: auto;
+    display: block;
+}
+.eval-horizon-legend {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 14px;
+    padding: 8px 0 0;
+    font-family: var(--font);
+    font-size: 11px;
+    color: #555;
+    justify-content: center;
+}
+.eval-horizon-legend-item {
+    display: inline-flex;
+    align-items: center;
+    gap: 5px;
+}
+.eval-horizon-legend-swatch {
+    display: inline-block;
+    width: 14px;
+    height: 10px;
+    border-radius: 2px;
+    flex-shrink: 0;
+}
+
+
+/* =====================================================================
+   Summary card: two tabs, two gauges per tab, confidence line, and the
+   distribution behind "Show the spread".
+   ===================================================================== */
+.card-gauges {
+    padding: 14px 16px 12px;
+}
+
+.card-gauges .panel-week-row {
+    margin-bottom: 8px;
+    padding-bottom: 8px;
+}
+
+.summary-pane {
+    display: none;
+    flex-direction: column;
+    gap: 6px;
+    flex: 1;
+}
+
+.summary-pane.active {
+    display: flex;
+}
+
+.gauge-row {
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    gap: 4px;
+    padding: 6px 0;
+    flex: 1 1 auto;   /* any spare height is shared, not left above the week buttons */
+}
+
+.gauge-row + .gauge-row {
+    border-top: 1px solid #eee;
+}
+
+.gauge-main {
+    display: flex;
+    align-items: center;
+    gap: 14px;
+}
+
+.gauge-text {
+    flex: 1;
+    min-width: 0;
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+}
+
+.gauge-head {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+}
+
+.gauge-head .gauge-title {
+    font-size: 14px;
+    font-weight: 700;
+    color: #1a1a1a;
+    margin: 0;
+    line-height: 1.2;
+    flex: 1;
+}
+
+.panel-help {
+    flex-shrink: 0;
+    width: 20px;
+    height: 20px;
+    font-size: 11px;
+    align-self: center;
+}
+
+.panel-dial {
+    width: 176px;
+    flex-shrink: 0;
+    height: auto;
+    display: block;
+}
+
+.panel-sentence {
+    font-size: var(--fs-md);
+    line-height: 1.45;
+    color: #333;
+    margin: 0;
+}
+
+.panel-sentence strong {
+    color: #1a1a1a;
+}
+
+.panel-sentence a {
+    color: var(--accent);
+}
+
+.panel-empty-line {
+    color: #777;
+}
+
+.panel-confidence {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    flex-wrap: wrap;
+    font-size: var(--fs-xs);
+    color: #666;
+    line-height: 1.3;
+}
+
+.conf-pill {
+    display: inline-block;
+    padding: 2px 8px;
+    border-radius: 10px;
+    font-size: var(--fs-xs);
+    font-weight: 600;
+    white-space: nowrap;
+}
+
+.conf-high     { background: #E6F2E8; color: #2E7D32; }
+.conf-moderate { background: #FBF1DC; color: #A56A00; }
+.conf-low      { background: #F9E6E4; color: #B3473E; }
+
+.spread-toggle {
+    align-self: flex-start;
+    background: none;
+    border: none;
+    padding: 2px 0;
+    font-family: var(--font);
+    font-size: var(--fs-xs);
+    font-weight: 500;
+    color: var(--accent);
+    cursor: pointer;
+}
+
+.spread-toggle:hover {
+    text-decoration: underline;
+}
+
+.panel-bars {
+    margin-top: 2px;
+    padding-top: 6px;
+}
+
+.panel-bars[hidden] {
+    display: none;
+}
+
+.panel-bars svg {
+    display: block;
+}
+
+.panel-note {
+    font-size: var(--fs-sm);
+    color: #555;
+    line-height: 1.45;
+    padding: 2px 0;
+}
+
+.panel-note-title {
+    font-size: var(--fs-md);
+    font-weight: 700;
+    margin-bottom: 2px;
+}
+
+/* No forecast yet: the gauges keep their frame, dials and details are hidden. */
+body.no-forecast .panel-dial,
+body.no-forecast .panel-bars,
+body.no-forecast .panel-confidence,
+body.no-forecast .spread-toggle,
+body.no-forecast .panel-week,
+body.no-forecast .panel-week-row,
+body.no-forecast .ref-date-group,
+body.no-forecast .most-recent-btn {
+    display: none;
+}
+
+body.no-forecast .gauge-main {
+    align-items: flex-start;
+}
+
+@media (max-width: 1000px) {
+    .cards-row { flex-direction: column; }
+    .card-gauges { width: auto; }
+}
+
+/* Headline at the top of the summary card. */
+.summary-headline {
+    padding: 0 0 12px;
+    border-bottom: 1px solid #eee;
+}
+
+.headline-date {
+    font-size: var(--fs-sm);
+    font-weight: 600;
+    color: #777;
+    margin: 0 0 4px;
+}
+
+.headline-main {
+    font-family: var(--font-serif);
+    font-size: 21px;
+    font-weight: 700;
+    line-height: 1.25;
+    color: #1a1a1a;
+    margin: 0;
+}
+
+.headline-visits {
+    font-size: 14px;
+    line-height: 1.4;
+    color: #444;
+    margin: 6px 0 0;
+}
+
+.headline-visits:empty {
+    display: none;
+}
+
+/* Season start and peak: two tiles side by side. */
+.headline-rows {
+    list-style: none;
+    margin: 14px 0 0;
+    padding: 0;
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 8px;
+}
+
+.headline-rows li {
+    background: #f6f7f9;
+    border-radius: 6px;
+    padding: 8px 10px;
+    display: flex;
+    flex-direction: column;
+    gap: 2px;
+    min-width: 0;
+}
+
+.headline-label {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 6px;
+    font-size: var(--fs-xs);
+    font-weight: 600;
+    color: #777;
+    text-transform: uppercase;
+    letter-spacing: 0.4px;
+}
+
+.tile-help {
+    width: 16px;
+    height: 16px;
+    font-size: 10px;
+    flex-shrink: 0;
+    text-transform: none;
+}
+
+.headline-value {
+    font-size: 14px;
+    color: #444;
+}
+
+.headline-visits strong,
+.headline-value strong,
+.summary-headline .nowrap {
+    color: #1a1a1a;
+    white-space: nowrap;
+}
+
+.headline-value strong {
+    font-size: 15px;
+}
+
+.headline-note {
+    font-size: var(--fs-sm);
+    color: #666;
+}
+
+/* Forecast week at the bottom of the summary card, shown as dates. */
+.card-gauges .panel-week-row {
+    flex-direction: column;
+    align-items: stretch;
+    gap: 6px;
+    margin: 4px 0 0;
+    padding: 10px 0 0;
+    border-bottom: none;
+    border-top: 1px solid #eee;
+}
+
+.card-gauges .panel-week-row .control-title {
+    margin: 0;
+}
+
+.horizon-control.panel-week-buttons .seg-btn {
+    padding: 6px 2px;
+}
+
+.horizon-control.panel-week-buttons .seg-btn .date-range {
+    display: block;
+    font-size: 11.5px;
+    font-weight: 600;
+    white-space: nowrap;
+    opacity: 1;
+}
+
+.horizon-control.panel-week-buttons .seg-btn .date-label {
+    display: none;
+}
+
+body.no-forecast .summary-headline {
+    display: none;
+}
+
+/* Cut-off tables in the "?" help. */
+.info-table {
+    border-collapse: collapse;
+    margin: 4px 0 6px;
+    font-size: var(--fs-sm);
+    width: 100%;
+}
+
+.info-table th,
+.info-table td {
+    text-align: left;
+    padding: 4px 6px;
+    border-bottom: 1px solid #eee;
+    white-space: nowrap;
+}
+
+.info-table th {
+    font-weight: 600;
+    color: #555;
+    background: #f7f7f7;
+}
+
+.info-table td:first-child {
+    font-weight: 600;
+    color: #1a1a1a;
+}
+
+.info-table tr.is-selected td {
+    background: #eef5fb;
+    font-weight: 700;
+}
+
+.info-table-caption {
+    font-size: var(--fs-sm);
+    font-weight: 600;
+    color: #555;
+    margin: 0 0 2px;
+}
+
+.info-table-note {
+    font-size: var(--fs-sm);
+    color: #555;
+    margin: 0 0 10px;
+}
+
+/* Plain-language "?" help. */
+.info-lead {
+    font-size: 15px;
+    color: #1a1a1a;
+    margin: 0 0 10px;
+}
+
+.info-week {
+    font-size: var(--fs-md);
+    color: #333;
+    margin: 0 0 6px;
+}
+
+.info-small {
+    font-size: var(--fs-sm);
+    color: #555;
+    margin: 8px 0 0;
+}
+
+.info-list {
+    list-style: none;
+    margin: 0;
+    padding: 0;
+    border-top: 1px solid #eee;
+}
+
+.info-list li {
+    display: grid;
+    grid-template-columns: 150px 1fr auto;
+    gap: 10px;
+    padding: 6px 8px;
+    border-bottom: 1px solid #eee;
+    font-size: var(--fs-md);
+}
+
+.info-list li.is-selected {
+    background: #eef5fb;
+    font-weight: 600;
+}
+
+.info-list-name {
+    font-weight: 600;
+    color: #1a1a1a;
+}
+
+.info-list-chance {
+    color: #555;
+    white-space: nowrap;
+}
+
+/* Help / tour links above the cards (the page title was removed). */
+.page-actions {
+    display: flex;
+    justify-content: flex-end;
+    gap: 8px;
+    margin: 0 0 8px;
+}
+
+/* The tabs live inside the summary card, above the gauges they switch. */
+.card-tabs {
+    margin: 10px 0 2px;
+    border-bottom: 2px solid #e0e0e0;
+}
+
+.card-tabs .tab {
+    flex: 1;
+    padding: 7px 6px;
+    font-size: 13px;
+    text-align: center;
+}
+
+.info-h {
+    font-size: var(--fs-md);
+    font-weight: 700;
+    color: #1a1a1a;
+    margin: 12px 0 4px;
+}
+
+.info-steps {
+    margin: 0 0 10px;
+    padding-left: 20px;
+    font-size: var(--fs-md);
+    line-height: 1.5;
+    color: #333;
+}
+
+.info-steps li {
+    margin-bottom: 4px;
+}
+
+.info-table tr.is-example td,
+.info-table td.is-example {
+    background: #fff4d6;
+    font-weight: 700;
+    color: #1a1a1a;
+}
+
+.info-table th.is-example-col {
+    color: #1a1a1a;
+}
+
+.info-example {
+    font-size: var(--fs-sm);
+    line-height: 1.5;
+    color: #444;
+    background: #fffaf0;
+    border-radius: 6px;
+    padding: 6px 10px;
+    margin: 6px 0 4px;
+}
+
+/* The chart card keeps its own height when the gauges' chances are expanded. */
+
+/* EpiSTORM logo at the bottom of every page. */
+.footer-logo {
+    display: block;
+    height: 44px;
+    width: auto;
+    margin: 4px auto 12px;
+}
+
+/* Serif headlines across the site (NYT-style): page titles and section heads. */
+.guide-page h2, .guide-view h3, .about-page h2, .section-title {
+    font-family: var(--font-serif);
+}
+
+/* =====================================================================
+   Refresh: banner, page, cards, footer
+   ===================================================================== */
+body { background: #f2f4f7; color: #1d2733; padding-top: 0; }
+
+/* Full-width banner behind the header */
+header {
+    background: var(--banner);
+    box-shadow: 0 0 0 100vmax var(--banner);
+    clip-path: inset(0 -100vmax);
+    border-bottom: none;
+    padding: 14px 0 12px;
+    margin-bottom: 16px;
+}
+header h1 { color: #fff; }
+header .subtitle, header .last-updated { color: #c9d6e3; }
+header .most-recent-btn { color: #e6eef6; border-left-color: rgba(255,255,255,0.3); }
+header .most-recent-btn:hover { color: #fff; }
+header .nav-link { color: #c9d6e3; }
+header .nav-link:hover, header .nav-link.active { color: #fff; }
+header .nav-link.active { box-shadow: inset 0 -2px 0 #fff; padding-bottom: 2px; }
+header .season-picker { border-right-color: rgba(255,255,255,0.25); }
+header .season-picker-label { color: #c9d6e3; }
+header .season-select { border-color: transparent; }
+
+/* Cards: cleaner, a little tighter */
+.card { border: 1px solid #dde3ea; border-radius: 10px; box-shadow: 0 1px 2px rgba(20, 40, 70, 0.06); }
+.cards-row { align-items: flex-start; gap: 14px; margin-bottom: 12px; }
+.card-overview { padding: 12px 16px 8px; }
+.card-overview .traj-controls { margin-bottom: 2px; }
+.card-gauges { padding: 12px 16px 12px; }
+.page-actions { margin: 0 0 10px; }
+.tab-action { border-color: #c8d2dc; color: #24405f; }
+.tab-action:hover { border-color: var(--banner); color: var(--banner); background: #fff; }
+.card-tabs .tab.active { border-bottom-color: var(--banner); color: var(--banner); }
+.horizon-control .seg-btn.active { background: var(--banner); border-color: var(--banner); }
+.panel-week-buttons { border-color: var(--banner); }
+.spread-toggle { color: var(--accent); }
+.traj-legend { margin-top: 0; }
+
+/* Footer: logo on the left, funding text beside it */
+.funding-footer {
+    display: flex;
+    align-items: center;
+    gap: 18px;
+    text-align: left;
+    color: #4a5866;
+    font-size: 12px;
+    padding: 16px 0 8px;
+    border-top: 1px solid #dde3ea;
+}
+.funding-footer p { margin: 0; }
+.footer-logo { height: 38px; margin: 0; flex-shrink: 0; }
+
+/* "How to read this" and "Guided Tour" live in the banner nav. */
+.nav-btn { background: none; border: none; padding: 0; cursor: pointer; font-family: var(--font); font-size: 15px; font-weight: 500; }
+header .nav-link.tab-action-link { display: inline; }
+.cards-row { margin-top: 2px; }
+
+/* =====================================================================
+   National dashboard: map card beside the summary card, the time series
+   full width below. Added on top of the Boston layout above.
+   ===================================================================== */
+.cards-row { align-items: stretch; }
+.card-map { padding: 12px 16px 12px; }
+.card-timeseries { margin-bottom: 12px; }
+
+.map-title-row {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 8px;
+    margin-bottom: 6px;
+}
+.map-title {
+    display: flex;
+    align-items: baseline;
+    flex-wrap: wrap;
+    gap: 4px 10px;
+    margin: 0;
+}
+.map-title-main {
+    font-family: var(--font-serif);
+    font-size: 20px;
+    font-weight: 700;
+    color: #1d2733;
+}
+.map-title-week {
+    font-size: var(--fs-md);
+    color: #4a5866;
+}
+.map-container { flex: 1; min-width: 0; }
+.map-left-controls { width: 150px; flex-shrink: 0; gap: 12px; }
+.map-us-btn {
+    font: 600 12px var(--font);
+    padding: 6px 10px;
+    border: 1px solid #cfd8e2;
+    border-radius: 4px;
+    background: #fff;
+    color: #24405f;
+    cursor: pointer;
+    text-align: left;
+}
+.map-us-btn:hover { border-color: #24405f; }
+.map-us-btn.active { background: #24405f; border-color: #24405f; color: #fff; }
+.map-hint {
+    font-size: var(--fs-xs);
+    color: #7a8794;
+    line-height: 1.4;
+}
+.state { cursor: pointer; }
+
+/* The gauge the map shows is outlined; any gauge can be clicked to map it. */
+.gauge-row {
+    cursor: pointer;
+    border-radius: 6px;
+    margin: 0 -8px;
+    padding-left: 8px;
+    padding-right: 8px;
+    box-shadow: inset 0 0 0 1.5px transparent;
+    transition: box-shadow 0.15s ease, background 0.15s ease;
+}
+.gauge-row:hover { background: #f6f8fa; }
+.gauge-row.is-mapped { box-shadow: inset 0 0 0 1.5px #24405f; background: #f6f8fa; }
+
+/* Individual-trajectory slider in the chart controls */
+.traj-slider-group { display: flex; align-items: center; gap: 8px; }
+.traj-slider {
+    -webkit-appearance: none;
+    appearance: none;
+    width: 100px;
+    height: 3px;
+    background: #ddd;
+    border-radius: 2px;
+    outline: none;
+    cursor: pointer;
+}
+.traj-slider::-webkit-slider-thumb {
+    -webkit-appearance: none;
+    appearance: none;
+    width: 14px;
+    height: 14px;
+    background: #1a1a1a;
+    border-radius: 50%;
+    cursor: pointer;
+}
+.traj-slider::-moz-range-thumb {
+    width: 14px;
+    height: 14px;
+    background: #1a1a1a;
+    border-radius: 50%;
+    border: none;
+    cursor: pointer;
+}
+.traj-slider-value { font-size: 13px; font-weight: 600; color: #333; min-width: 34px; }
+
+.tooltip-sub { font-size: 11px; color: #444; margin: 2px 0; line-height: 1.4; }
+.tooltip-hint { font-size: 10px; color: #999; margin-top: 4px; }
+
+@media (max-width: 1000px) {
+    .map-with-controls { flex-direction: column; }
+    .map-left-controls { width: auto; flex-direction: row; flex-wrap: wrap; }
+}
+
+/* Location heading at the top of the summary card */
+.headline-location {
+    font-family: var(--font-serif);
+    font-size: 24px;
+    font-weight: 700;
+    line-height: 1.2;
+    color: #24405f;
+    margin: 0 0 2px;
+}
+
+/* Forecast-week buttons under the map (moved out of the summary card) */
+.card-map .panel-week-row {
+    display: flex;
+    flex-direction: row;
+    align-items: center;
+    gap: 12px;
+    margin: auto 0 0;
+    padding: 10px 0 0;
+    border-bottom: none;
+    border-top: 1px solid #eee;
+}
+.card-map .panel-week-row .control-title { margin: 0; white-space: nowrap; }
+.card-map .panel-week-row .horizon-control { flex: 1; }
+body.no-forecast .card-map .panel-week-row { display: none; }

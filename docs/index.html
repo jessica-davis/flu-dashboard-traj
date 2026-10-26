@@ -4,7 +4,10 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Influenza Hospitalization Forecast</title>
-    <link rel="stylesheet" href="css/style.css">
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Libre+Franklin:wght@400;500;600;700&family=Source+Serif+4:opsz,wght@8..60,400;8..60,600;8..60,700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="css/dashboard.css">
     <script src="https://d3js.org/d3.v7.min.js"></script>
     <script src="https://d3js.org/topojson.v3.min.js"></script>
 </head>
@@ -13,34 +16,32 @@
         <div class="header-row">
             <div>
                 <h1>Influenza Hospitalization Forecast</h1>
-                <p class="subtitle">Weekly forecasts of the EpyStrain model <span class="last-updated" id="last-updated"></span><button class="most-recent-btn" onclick="jumpToMostRecent()">Most Recent Forecast</button></p>
+                <p class="subtitle">Weekly forecasts of the EpyStrain model <span class="last-updated" id="last-updated"></span><button class="most-recent-btn" onclick="jumpToMostRecent()">Most Recent Forecast</button><button class="most-recent-btn" id="tour-btn" onclick="startTour()">Guided Tour</button></p>
             </div>
             <nav class="header-nav">
+                <label class="season-picker" for="season-select">
+                    <span class="season-picker-label">Season</span>
+                    <select id="season-select" class="season-select" aria-label="Select flu season"></select>
+                </label>
                 <a class="nav-link active" href="index.html">Dashboard</a>
                 <a class="nav-link" href="evaluations.html">Evaluations</a>
-                <a class="nav-link" href="about.html">About</a>
+                <a class="nav-link" href="methods.html">Methods</a>
             </nav>
         </div>
     </header>
 
     <main>
-        <!-- National Overview section -->
-        <h2 class="section-title">National Overview</h2>
-        <!-- Tab bar -->
-        <div class="tab-bar" id="tab-bar">
-            <button class="tab active" data-tab="trend">Influenza Trend</button>
-            <button class="tab" data-tab="activity">Influenza Activity</button>
-            <button class="tab" data-tab="admissions">Weekly Hospital Admissions</button>
-            <div class="tab-bar-actions">
-                <button class="tab-action" onclick="startTour()">Guided Tour</button>
-            </div>
-        </div>
         <div class="cards-row">
-            <!-- Map card -->
+            <!-- Map card: colored by the gauge outlined in the summary card -->
             <div class="card card-map">
+                <div class="map-title-row">
+                    <h2 class="map-title" id="map-title"></h2>
+                    <button class="help-btn" data-info="map" title="How to read the map" aria-label="How to read the map">?</button>
+                </div>
                 <div class="map-with-controls">
                     <div class="map-left-controls">
-                        <div class="control-group">
+                        <button class="map-us-btn" id="map-us-btn" type="button" onclick="selectLocation('US')">United States</button>
+                        <div class="control-group" id="estimate-group">
                             <div class="control-title">Uncertainty</div>
                             <div class="seg-group estimate-control" id="estimate-buttons">
                                 <button class="seg-btn estimate-seg active" data-estimate="most_likely">Most Likely<span class="estimate-desc">Expected forecast</span></button>
@@ -48,117 +49,183 @@
                                 <button class="seg-btn estimate-seg" data-estimate="upper">Upper End<span class="estimate-desc">90% chance of less</span></button>
                             </div>
                         </div>
-                        <div class="rate-toggle" id="rate-toggle" style="display:none;">
-                            <button class="rate-btn active" data-rate="total">Total</button>
-                            <button class="rate-btn" data-rate="percapita">Per 100k</button>
-                        </div>
-                        <div class="map-trend-summary" id="map-trend-summary"></div>
                         <div class="legend-container" id="legend"></div>
+                        <p class="map-hint">Click a gauge to change the map. Click a state to see it.</p>
                     </div>
                     <div class="map-container">
                         <svg id="us-map"></svg>
                     </div>
                 </div>
-                <div class="map-bottom-controls">
-                    <div class="control-title">Forecast Week</div>
+                <!-- Forecast week: sets the week for the map, the panel and the chart -->
+                <div class="map-bottom-controls panel-week-row">
+                    <span class="control-title">Forecast for the week of</span>
                     <div class="seg-group horizon-control horizontal" id="date-buttons">
                         <!-- Populated by JS -->
                     </div>
                 </div>
-                <button class="info-btn" data-info="map" aria-label="Info">i</button>
             </div>
 
-            <!-- Gauges card -->
-            <div class="card card-gauges">
-                <div class="gauges-overview" id="gauges-overview">
-                    <h3 class="forecast-context-title" id="forecast-context-title"></h3>
-                    <p class="overview-primary" id="overview-primary"></p>
+            <!-- Summary card: two gauges per tab. -->
+            <div class="card card-gauges" id="summary-card">
+                <!-- Overall summary, the same on both tabs: activity for the
+                     selected week, season start and peak, with dates (gauges.js) -->
+                <div class="summary-headline">
+                    <h2 class="headline-location" id="headline-location"></h2>
+                    <p class="headline-date" id="headline-date"></p>
+                    <p class="headline-main" id="headline-main"></p>
+                    <p class="headline-visits" id="headline-visits"></p>
+                    <ul class="headline-rows" id="headline-rows"></ul>
                 </div>
-                <div class="gauges-stack">
-                    <div class="gauge-wrapper" id="active-gauge-wrapper">
-                        <h3 class="gauge-title" id="active-gauge-title">Trend Forecast</h3>
-                        <svg id="gauge-active"></svg>
+
+                <!-- Two tabs, right above the gauges they switch: what is
+                     happening now (activity, trend) and the shape of the
+                     season (start, peak). -->
+                <div class="tab-bar card-tabs" id="tab-bar" role="tablist">
+                    <button class="tab active" data-tab="now" role="tab">Activity &amp; Trend</button>
+                    <button class="tab" data-tab="season" role="tab">Projected Start &amp; Peak</button>
+                </div>
+
+                <div class="summary-pane active" id="pane-now" data-tab="now">
+                    <div class="gauge-row" id="panel-activity" data-view="activity" title="Show on the map">
+                        <div class="gauge-main">
+                            <svg class="panel-dial" id="dial-activity"></svg>
+                            <div class="gauge-text">
+                                <div class="gauge-head">
+                                    <h3 class="gauge-title">Influenza Activity</h3>
+                                    <button class="help-btn panel-help" data-info="activity" title="About influenza activity" aria-label="About influenza activity">?</button>
+                                </div>
+                                <p class="panel-sentence" id="sentence-activity"></p>
+                                <div class="panel-confidence" id="confidence-activity"></div>
+                                <button class="spread-toggle" type="button" aria-expanded="false">Show all chances &#9662;</button>
+                            </div>
+                        </div>
+                        <div class="panel-bars" id="bars-activity" hidden></div>
                     </div>
-                    <div class="bar-chart-container" id="us-bar-chart"></div>
-                    <div class="admissions-dist-container" id="admissions-dist"></div>
+                    <div class="gauge-row" id="panel-trend" data-view="trend" title="Show on the map">
+                        <div class="gauge-main">
+                            <svg class="panel-dial" id="dial-trend"></svg>
+                            <div class="gauge-text">
+                                <div class="gauge-head">
+                                    <h3 class="gauge-title">Influenza Trend</h3>
+                                    <button class="help-btn panel-help" data-info="trend" title="About influenza trend" aria-label="About influenza trend">?</button>
+                                </div>
+                                <p class="panel-sentence" id="sentence-trend"></p>
+                                <div class="panel-confidence" id="confidence-trend"></div>
+                                <button class="spread-toggle" type="button" aria-expanded="false">Show all chances &#9662;</button>
+                            </div>
+                        </div>
+                        <div class="panel-bars" id="bars-trend" hidden></div>
+                    </div>
                 </div>
-                <button class="info-btn" data-info="gauges" aria-label="Info">i</button>
+
+                <div class="summary-pane" id="pane-season" data-tab="season">
+                    <div class="gauge-row" id="panel-onset" data-view="onset" title="Show on the map">
+                        <div class="gauge-main">
+                            <svg class="panel-dial" id="dial-onset"></svg>
+                            <div class="gauge-text">
+                                <div class="gauge-head">
+                                    <h3 class="gauge-title">Projected Season Start</h3>
+                                    <button class="help-btn panel-help" data-info="onset" title="About the projected season start" aria-label="About the projected season start">?</button>
+                                </div>
+                                <p class="panel-sentence" id="sentence-onset"></p>
+                                <div class="panel-confidence" id="confidence-onset"></div>
+                                <button class="spread-toggle" type="button" aria-expanded="false">Show all chances &#9662;</button>
+                            </div>
+                        </div>
+                        <div class="panel-bars" id="bars-onset" hidden></div>
+                    </div>
+                    <div class="gauge-row" id="panel-peak" data-view="peak" title="Show on the map">
+                        <div class="gauge-main">
+                            <svg class="panel-dial" id="dial-peak"></svg>
+                            <div class="gauge-text">
+                                <div class="gauge-head">
+                                    <h3 class="gauge-title">Projected Peak Week</h3>
+                                    <button class="help-btn panel-help" data-info="peak" title="About the projected peak week" aria-label="About the projected peak week">?</button>
+                                </div>
+                                <p class="panel-sentence" id="sentence-peak"></p>
+                                <div class="panel-confidence" id="confidence-peak"></div>
+                                <button class="spread-toggle" type="button" aria-expanded="false">Show all chances &#9662;</button>
+                            </div>
+                        </div>
+                        <div class="panel-bars" id="bars-peak" hidden></div>
+                    </div>
+                </div>
+
             </div>
         </div>
 
-        <!-- Trajectory section -->
-        <hr class="section-divider">
-        <h2 class="section-title">Trajectory Specific Forecasts</h2>
-        <p class="section-subtitle">Individual model simulations by state. Select a state from the map above or the dropdown below. Click anywhere on the chart to jump to the forecast generated that week.</p>
-        <div class="card card-trajectories" id="trajectory-section">
-            <div class="traj-header">
+        <!-- Time series for the selected location -->
+        <div class="card card-overview card-timeseries" id="trajectory-section">
+            <div class="overview-chart-area">
                 <div class="traj-controls">
+                    <div class="traj-label ref-date-group">
+                        Forecast
+                        <select id="ref-date-select" class="ref-date-select"></select>
+                    </div>
                     <label class="traj-label traj-label-location">
                         Location
                         <select id="traj-location" class="traj-select traj-select-location"></select>
                     </label>
-                    <label class="traj-label">
-                        Trajectories
-                        <div class="traj-slider-group">
-                            <input type="range" id="traj-slider" class="traj-slider" min="0" max="5" step="1" value="5">
-                            <span class="traj-slider-value" id="traj-slider-value">200</span>
-                        </div>
-                    </label>
                     <div class="traj-label traj-pi-controls">
-                        Prediction Intervals
+                        <label class="traj-check"><input type="checkbox" id="traj-pi-all"> Forecast bands</label>
                         <div class="traj-pi-buttons" id="traj-pi-buttons"></div>
                     </div>
+                    <label class="traj-label traj-label-slider">
+                        Trajectories
+                        <span class="traj-slider-group">
+                            <input type="range" id="traj-slider" class="traj-slider" min="0" max="5" step="1" value="0">
+                            <span class="traj-slider-value" id="traj-slider-value">None</span>
+                        </span>
+                    </label>
+                    <button class="help-btn traj-info-btn" data-info="traj" title="How to read this chart" aria-label="How to read this chart">?</button>
+                    <div class="traj-label traj-pi-controls traj-label-options">
+                        Add to chart
+                        <div class="traj-pi-buttons">
+                            <button class="traj-pi-btn" id="ctx-activity-btn" title="Shade the chart by activity level (low, moderate, high, very high)">
+                                <span>Activity levels</span>
+                            </button>
+                            <button class="traj-pi-btn" id="ctx-seasons-btn" title="Overlay previous seasons, aligned by week of the season">
+                                <span>Previous seasons</span>
+                            </button>
+                            <button class="traj-pi-btn" id="ctx-vintage-btn" title="Show the surveillance data as it was reported when this forecast was made; click any week to move the snapshot">
+                                <span class="traj-pi-swatch" style="background:#D65F00;opacity:0.8"></span>
+                                <span>Data as reported</span>
+                            </button>
+                            <button class="traj-pi-btn" id="ctx-full-season" title="Expand the axes to show the whole season">
+                                <span>Full season</span>
+                            </button>
+                        </div>
+                    </div>
                 </div>
-            </div>
-            <div class="traj-body">
+
                 <div class="traj-chart-container">
                     <svg id="traj-chart"></svg>
                 </div>
-                <div class="traj-context-panel" id="traj-context-panel">
-                    <h3 class="context-panel-title">Add Context</h3>
-                    <div class="context-section" id="ctx-seasons">
-                        <button class="context-section-header" data-section="seasons">
-                            <span>Compare to Previous Seasons</span>
-                            <span class="context-chevron">&#9662;</span>
-                        </button>
-                        <div class="context-section-body" id="ctx-seasons-body"></div>
-                    </div>
-                    <div class="context-section" id="ctx-activity">
-                        <button class="context-section-header" data-section="activity">
-                            <span>Activity Levels</span>
-                            <span class="context-chevron">&#9662;</span>
-                        </button>
-                        <div class="context-section-body" id="ctx-activity-body"></div>
-                    </div>
-                    <div class="context-section" id="ctx-trends">
-                        <button class="context-section-header" data-section="trends">
-                            <span>Trend Forecasts</span>
-                            <span class="context-chevron">&#9662;</span>
-                        </button>
-                        <div class="context-section-body" id="ctx-trends-body"></div>
-                    </div>
-                </div>
+
+                <!-- Season pills, shown only while "Previous seasons" is on -->
+                <div class="context-section-body" id="ctx-seasons-body"></div>
+                <div class="traj-legend" id="traj-legend"></div>
             </div>
-            <div class="traj-legend" id="traj-legend"></div>
-            <button class="info-btn" data-info="traj" aria-label="Info">i</button>
         </div>
     </main>
 
     <footer class="funding-footer">
-        This work is supported by Cooperative Agreements NU38PW000005 from The Centers for Disease Control and Prevention (CDC) and CSTE and from CDC-RFA-FT-23-0069 from the CDC's Center for Forecasting and Outbreak Analytics.
+        <img class="footer-logo" src="img/epistorm-logo.svg" alt="EpiSTORM">
+        <p>This work is supported by Cooperative Agreements NU38PW000005 from The Centers for Disease Control and Prevention (CDC) and CSTE and from CDC-RFA-FT-23-0069 from the CDC's Center for Forecasting and Outbreak Analytics.</p>
     </footer>
 
     <!-- Tooltip containers -->
     <div class="tooltip" id="tooltip"></div>
     <div class="traj-tip" id="traj-tooltip"></div>
 
+    <script src="js/season.js"></script>
     <script src="js/colors.js"></script>
-    <script src="js/legend.js"></script>
     <script src="js/gauges.js"></script>
+    <script src="js/legend.js"></script>
     <script src="js/map.js"></script>
     <script src="js/controls.js"></script>
     <script src="js/trajectories.js"></script>
-    <script src="js/tour.js"></script>
+    <script src="js/dashboard-tour.js"></script>
     <script src="js/main.js"></script>
 </body>
 </html>
